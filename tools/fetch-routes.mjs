@@ -66,6 +66,7 @@ const CORRIDORS = [
     points: [
       [-75.91872, 45.32040], // Kanata ave
       [-75.80812, 45.35641], // north east of Andrew Haydon park
+      [-75.754068, 45.395383], // Scott St
       DOWNTOWN
     ],
   },
@@ -97,12 +98,14 @@ const CORRIDORS = [
     id: 'barrhaven',
     name_en: 'Barrhaven',
     name_fr: 'Barrhaven',
-    desc_en: 'From Strandherd north to Hog’s Back, the canal pathway, and the Laurier bike lane',
-    desc_fr: 'De Strandherd vers le nord jusqu’à Hog’s Back, le sentier du canal et la bande cyclable Laurier',
+    desc_en: 'From Strandherd north along the Woodroffe Avenue pathway, then Albert Street to the Laurier bike lane',
+    desc_fr: 'De Strandherd vers le nord par le sentier de l’avenue Woodroffe, puis la rue Albert jusqu’à la bande cyclable Laurier',
     color: '#F58231',
     points: [
       [-75.72704, 45.27536], // Strandherd Dr at Greenpointe Park
-      [-75.70206, 45.37500], // strip pathway north of the Hog's Back locks underpass loop
+      [-75.735882, 45.307277], // Woodroffe Ave corridor (south) — keeps route off Prince of Wales
+      [-75.727046, 45.346903], // Woodroffe Ave corridor (north)
+      [-75.732923, 45.357044], // capilano
       [-75.72176, 45.40992], // Albert St corridor cycleway east of Bayview
       [-75.71399, 45.41252], // Albert St near booth
       [-75.70911, 45.41520], // Slater St near new library
@@ -118,7 +121,12 @@ const CORRIDORS = [
     desc_en: 'Sawmill Creek Pathway to the Rideau Canal Eastern Pathway',
     desc_fr: 'Sentier du ruisseau Sawmill jusqu’au sentier est du canal Rideau',
     color: '#F032E6',
-    points: [[-75.6478, 45.3524], [-75.67400, 45.38201], DOWNTOWN],
+    points: [
+      [-75.6478, 45.3524], // start
+      [-75.67400, 45.38201], // Sawmill Creek / canal corridor
+      [-75.678811, 45.398451], // early left off Riverdale Ave onto Echo Dr
+      DOWNTOWN,
+    ],
   },
   {
     id: 'findlay-creek',
@@ -128,16 +136,19 @@ const CORRIDORS = [
     desc_fr: 'De Findlay Creek jusqu’au centre-ville',
     color: '#000075',
     points: [
-      [-75.601977, 45.317435], // start
+      [-75.601977, 45.317435], // start at Dzifa's new house :) 
+      [-75.67400, 45.38201], // Sawmill Creek / canal corridor
+      [-75.678811, 45.398451], // early left off Riverdale Ave onto Echo Dr
+      [-75.680142, 45.418484], // canal pathway near downtown
       DOWNTOWN,
     ],
   },
   {
-    id: 'elmvale-acres',
-    name_en: 'Elmvale Acres',
-    name_fr: 'Elmvale Acres',
-    desc_en: 'From Elmvale Acres to downtown',
-    desc_fr: 'D’Elmvale Acres jusqu’au centre-ville',
+    id: 'alta-vista',
+    name_en: 'Alta Vista',
+    name_fr: 'Alta Vista',
+    desc_en: 'From Alta Vista to downtown',
+    desc_fr: 'D’Alta Vista jusqu’au centre-ville',
     color: '#469990',
     points: [
       [-75.627150, 45.394982], // start
@@ -145,14 +156,16 @@ const CORRIDORS = [
     ],
   },
   {
-    id: 'aylmer',
-    name_en: 'Aylmer',
-    name_fr: 'Aylmer',
-    desc_en: 'From Aylmer to downtown',
-    desc_fr: 'D’Aylmer jusqu’au centre-ville',
+    id: 'vanier',
+    name_en: 'Vanier',
+    name_fr: 'Vanier',
+    desc_en: 'From Vanier to downtown',
+    desc_fr: 'De Vanier jusqu’au centre-ville',
     color: '#808000',
     points: [
-      [-75.842385, 45.391551], // start
+      [-75.643666, 45.434086], // start, 
+      [-75.657432, 45.431567], // via
+      [-75.670478, 45.430130], // via
       DOWNTOWN,
     ],
   },
@@ -167,8 +180,12 @@ const CORRIDORS = [
 // bbox: [minLon, minLat, maxLon, maxLat]
 
 const MANUAL_TRIMS = {
-  // Wellington -> O'Connor left turn: skip the west-crosswalk overshoot
-  orleans: [[-75.7005, 45.4224, -75.6996, 45.4228]],
+  // Wellington -> O'Connor left turn: drop the two crossing points west of
+  // the junction so the line follows O'Connor's real alignment (per OSM:
+  // 45.42265,-75.69991 -> 45.42257,-75.69984 -> 45.42200,-75.69935)
+  orleans: [[-75.70010, 45.4224, -75.69993, 45.4227]],
+  // Madawaska Dr right turn: drop the little out-and-back stub west of the junction
+  nepean: [[-75.69900, 45.39784, -75.69894, 45.39788]],
 };
 
 function applyTrims(coordinates, boxes) {
@@ -181,9 +198,18 @@ function applyTrims(coordinates, boxes) {
 // Safety classification from OSM way tags
 // ---------------------------------------------------------------------------
 
+// Ways that are car-free cycling infrastructure on their own.
 const CAR_FREE_HIGHWAYS = new Set([
-  'cycleway', 'path', 'footway', 'pedestrian', 'track', 'bridleway', 'steps',
+  'cycleway', 'path', 'track', 'bridleway',
 ]);
+
+// Foot-first ways. These are only credited as car-free cycling infrastructure
+// when OSM says bikes may use them — that is how genuine multi-use pathways are
+// tagged. A plain sidewalk or street crossing is car-free in the literal sense
+// but is not somewhere you ride, so counting it would overstate how protected
+// a route is.
+const FOOT_HIGHWAYS = new Set(['footway', 'pedestrian', 'steps']);
+const BIKES_ALLOWED = new Set(['yes', 'designated', 'permissive']);
 
 function parseWayTags(str) {
   const tags = {};
@@ -197,6 +223,9 @@ function parseWayTags(str) {
 function classify(wayTagsStr) {
   const tags = parseWayTags(wayTagsStr);
   if (CAR_FREE_HIGHWAYS.has(tags.highway)) return 'carfree';
+  if (FOOT_HIGHWAYS.has(tags.highway)) {
+    return BIKES_ALLOWED.has(tags.bicycle) ? 'carfree' : 'road';
+  }
 
   const cyclewayValues = [
     tags.cycleway, tags['cycleway:left'], tags['cycleway:right'], tags['cycleway:both'],

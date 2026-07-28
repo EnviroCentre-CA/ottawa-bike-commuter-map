@@ -308,12 +308,19 @@ function applySelection() {
 
 // Photo bubbles — small round thumbnails showing what the infrastructure
 // looks like at that spot; visible only while their route is selected.
+//
+// Turned OFF at the client's request for now. The feature is complete and
+// tested — set SHOW_PHOTOS to true to bring it back (photos live in photos/
+// and are listed in photos.json).
+const SHOW_PHOTOS = false;
+
 let photosData = [];
 let photoMarkers = [];
 
 function updatePhotoBubbles() {
   photoMarkers.forEach(m => m.remove());
   photoMarkers = [];
+  if (!SHOW_PHOTOS) return;
   if (!selectedId) return;
   for (const ph of photosData.filter(p => p.route === selectedId)) {
     const el = document.createElement('button');
@@ -362,11 +369,19 @@ function renderRouteList() {
   if (!routesData) return;
   const list = document.getElementById('route-list');
   list.innerHTML = '';
+  // Routes span multiple safety stretches — one list entry each, A→Z by the
+  // name shown in the current language (localeCompare handles accents).
   const seen = new Set();
+  const routes = [];
   for (const f of routesData.features) {
-    const p = f.properties;
-    if (seen.has(p.id)) continue; // routes span multiple safety stretches
-    seen.add(p.id);
+    if (seen.has(f.properties.id)) continue;
+    seen.add(f.properties.id);
+    routes.push(f.properties);
+  }
+  routes.sort((a, b) =>
+    a['name_' + lang].localeCompare(b['name_' + lang], lang, { sensitivity: 'base' }));
+
+  for (const p of routes) {
     const btn = document.createElement('button');
     btn.className = 'route' + (p.id === selectedId ? ' active' : '');
     btn.dataset.id = p.id;
@@ -422,7 +437,9 @@ window._map = map; // debugging hook
 (async function boot() {
   applyI18n();
   routesData = await fetch('routes.geojson').then(r => r.json());
-  photosData = await fetch('photos.json').then(r => r.ok ? r.json() : []).catch(() => []);
+  photosData = SHOW_PHOTOS
+    ? await fetch('photos.json').then(r => r.ok ? r.json() : []).catch(() => [])
+    : [];
   renderRouteList();
   await setMapStyle();
   map.fitBounds(allBounds(), { padding: 60, duration: 0 });
