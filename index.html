@@ -25,6 +25,12 @@
     --navy: #071546;
     --brand: #004990;
     --brand-teal: #006170;
+    /* Application chrome taken from GeoOttawa, so this reads as a City mapping
+       product: deep navy bars, white type, square-cornered controls, teal
+       active state. */
+    --chrome: #14294d;
+    --chrome-line: #0b1b35;
+    --accent: #3f8f88;
     --muted: #6c757d;
     --card: #ffffff;
     --border: #dee2e6;
@@ -43,25 +49,30 @@
   }
   header {
     display: flex;
-    align-items: baseline;
-    gap: 12px;
+    align-items: center;
+    gap: 14px;
     flex-wrap: wrap;
-    padding: 12px 16px;
-    background: var(--card);
-    border-bottom: 4px solid var(--brand);
+    padding: 9px 14px;
+    background: var(--chrome);
+    color: #fff;
+    border-bottom: 2px solid var(--chrome-line);
   }
-  header h1 { font-size: 19px; font-weight: 800; color: var(--navy); letter-spacing: -0.01em; }
-  header .tagline { font-size: 13px; color: var(--muted); flex: 1; min-width: 200px; }
+  header .logo { height: 36px; width: auto; flex: 0 0 auto; }
+  header .titles { flex: 1; min-width: 200px; display: flex; flex-direction: column; }
+  header h1 { font-size: 17.5px; font-weight: 800; color: #fff; letter-spacing: -0.01em; }
+  header .tagline { font-size: 12.5px; color: rgba(255,255,255,.8); }
   header .toggles { display: flex; gap: 8px; }
   header button {
-    font: inherit; font-size: 13px;
-    padding: 3px 10px;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    background: var(--paper);
+    font: inherit; font-size: 13px; font-weight: 600;
+    padding: 5px 13px;
+    /* Square corners: City mapping chrome uses boxes, not pills. */
+    border: 1px solid rgba(255,255,255,.75); border-radius: 3px;
+    background: transparent; color: #fff;
     cursor: pointer;
   }
-  header button[aria-pressed="true"] { background: var(--teal); color: #fff; border-color: var(--teal); }
+  header button:hover { background: rgba(255,255,255,.14); }
+  header button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  header button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
   #wrap { position: relative; flex: 1; min-height: 0; }
   #map { position: absolute; inset: 0; }
 
@@ -114,11 +125,12 @@
   .swatch.lane { border-top: 3px solid #3a8878; opacity: .55; }
   footer {
     padding: 8px 16px;
-    font-size: 11.5px; color: var(--muted);
-    background: var(--card);
-    border-top: 1px solid var(--border);
+    font-size: 10.5px; color: rgba(255,255,255,.85);
+    background: var(--chrome);
+    border-top: 2px solid var(--chrome-line);
   }
-  footer a { color: var(--navy); font-weight: 600; }
+  footer strong { color: #fff; }
+  footer a { color: #fff; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
   /* MapLibre popups and attribution ship their own font stack — align with the site */
   .maplibregl-popup-content, .maplibregl-ctrl-attrib {
     font-family: Mulish, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
@@ -161,8 +173,11 @@
 </head>
 <body>
 <header>
-  <h1 data-i18n="title"></h1>
-  <span class="tagline" data-i18n="tagline"></span>
+  <img class="logo" src="assets/ottawa-logo-white.svg" alt="City of Ottawa / Ville d’Ottawa">
+  <div class="titles">
+    <h1 data-i18n="title"></h1>
+    <span class="tagline" data-i18n="tagline"></span>
+  </div>
   <div class="toggles">
     <button id="lang-toggle"></button>
     <button id="hc-toggle" aria-pressed="false" data-i18n="highContrast"></button>

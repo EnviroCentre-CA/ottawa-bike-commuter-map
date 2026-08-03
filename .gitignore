@@ -1,0 +1,27 @@
+# This repository publishes the DIGITAL MAP ONLY.
+#
+# The poster / image pipeline that renders the tabloid route posters and the
+# Canva-ready map exports lives in this working directory and is used locally,
+# but is deliberately not committed, so what GitHub Pages deploys stays a clean
+# copy of the web map. Everything below is still fully usable on disk — git
+# simply does not track it.
+
+# Poster / print pipeline
+poster/
+posters/
+style-poster.json
+tools/render-poster.mjs
+tools/export-map-image.mjs
+tools/export-legend-svg.mjs
+
+# Only referenced by the poster pipeline (the web map uses the woff2 files)
+fonts/mulish-var.ttf
+
+# Node
+node_modules/
+package.json
+package-lock.json
+
+# OS
+.DS_Store
+Thumbs.db
