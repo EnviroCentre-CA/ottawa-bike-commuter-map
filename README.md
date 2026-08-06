@@ -9,7 +9,11 @@ The goal: show people who commute downtown by car that there is a safe,
 mostly car-free bike route from their neighbourhood and roughly how long
 it takes.
 
+<<<<<<< HEAD
+test3
+=======
 test2
+>>>>>>> 7593935fb131d9ab05f80570593da9f35405b6f3
 
 ## What's on the map
 
