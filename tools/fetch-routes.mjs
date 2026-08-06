@@ -18,12 +18,33 @@
  * sharing the route's id and display properties. The map scales line
  * thickness by the `safety` property when a route is selected.
  *
+ * Directional segments
+ * --------------------
+ * Most corridors are a single `points` array, ridden the same way both ways.
+ * A corridor may instead supply `segments`, each routed separately:
+ *
+ *   { points: [...] }                 ridden in both directions
+ *   { dir: 'towork', points: [...] }  outbound only (suburb -> downtown)
+ *   { dir: 'home',   points: [...] }  return only (downtown -> suburb)
+ *
+ * Consecutive segments must share an endpoint so the drawn lines meet. A
+ * `home` segment is still *written* suburb-first, but its geometry is
+ * reversed on output so the line runs downtown -> suburb; the map draws
+ * arrows along the coordinate order, so that reversal is what makes the
+ * homeward arrows point homeward. Features from a directional segment carry
+ * a `dir` property; shared ones have none.
+ *
  * Usage: node tools/fetch-routes.mjs
  */
 import fs from 'node:fs';
 import path from 'node:path';
 
 const DOWNTOWN = [-75.696914, 45.419324]; // Laurier Ave W & O'Connor St
+
+// Where the Vanier route's two directions part company and meet again. Both
+// sit on the line the router already draws, so the branches join cleanly.
+const SPLIT = [-75.63992, 45.43497];  // corner where the outbound leg turns north
+const REJOIN = [-75.64834, 45.43224]; // on the pathway, ~30 m from the requested point
 
 const CORRIDORS = [
   {
@@ -178,9 +199,17 @@ const CORRIDORS = [
     name_fr: 'Alta Vista',
     desc_en: 'From Alta Vista to downtown',
     desc_fr: 'D’Alta Vista jusqu’au centre-ville',
-    color: '#d7ea2c',
+    color: '#bace0c',
     points: [
       [-75.627150, 45.394982], // start
+      [-75.648404, 45.395360], // Saunders Rd, before the turn west onto Billings Ave
+      [-75.668822, 45.394078], // Billings Ave, west end near John Murphy Park
+      // Staircase north through the pathways east of Riverside Dr — four
+      // via-points because each leg is short and the router otherwise cuts
+      // across to Alta Vista Dr instead.
+      [-75.667757, 45.396604],
+      [-75.668635, 45.397303],
+      [-75.667513, 45.398849], // last jog before Smyth Rd / Rideau River Eastern Pathway
       DOWNTOWN,
     ],
   },
@@ -190,12 +219,58 @@ const CORRIDORS = [
     name_fr: 'Vanier',
     desc_en: 'From Vanier to downtown',
     desc_fr: 'De Vanier jusqu’au centre-ville',
-    color: '#808000',
-    points: [
-      [-75.643666, 45.434086], // start, 
-      [-75.657432, 45.431567], // via
-      [-75.670478, 45.430130], // via
-      DOWNTOWN,
+    color: '#3dcbff',
+    // Vanier is ridden slightly differently each way, so it is defined as
+    // segments rather than one `points` array (see "Directional segments").
+    segments: [
+      {
+        points: [
+          // Start extended northeast from the former start at
+          // -75.643666,45.434086; the route still passes within ~25 m of that
+          // old point on the homeward leg below.
+          [-75.623926, 45.443348], // start
+          [-75.625204, 45.441279], // Den Haag Dr
+          [-75.631610, 45.438584], // Borealis Cres
+          [-75.633193, 45.436673], // cut-through path, exits onto La Cité Private
+          SPLIT,
+        ],
+      },
+      {
+        // To work: north off the corner at SPLIT, west along Guy Ave, across
+        // St-Laurent Blvd, then south again to rejoin. Runs up to 260 m north
+        // of the homeward leg.
+        dir: 'towork',
+        points: [
+          SPLIT,
+          [-75.641595, 45.438056],
+          [-75.644506, 45.436759],
+          [-75.648995, 45.435334],
+          REJOIN,
+        ],
+      },
+      {
+        // Homeward: stay on McArthur Ave rather than taking the Guy Street jog
+        // the router picks unaided. The one via is the McArthur/St-Laurent
+        // intersection; without it the line runs ~130 m north of here.
+        dir: 'home',
+        points: [
+          SPLIT,
+          // Written suburb-first, so these read north-to-south even though the
+          // ride goes the other way. Swapping them sends the router up and back
+          // down St-Laurent — 1.25 km of doubling back instead of 0.93 km.
+          [-75.642205, 45.433175], // east side of St-Laurent Blvd, north of McArthur
+          [-75.642171, 45.432677], // McArthur Ave at St-Laurent Blvd
+          REJOIN,
+        ],
+      },
+      {
+        points: [
+          REJOIN,
+          [-75.657432, 45.431567], // via
+          [-75.670478, 45.430130], // via
+          DOWNTOWN,
+        ],
+      },
     ],
   },
 ];
@@ -338,54 +413,91 @@ function splitBySafety(coordinates, messages) {
 const root = path.resolve(import.meta.dirname, '..');
 const features = [];
 
-for (const c of CORRIDORS) {
-  const lonlats = c.points.map(p => p.join(',')).join('|');
+/** One BRouter request. Returns raw geometry plus the way-tag message table. */
+async function fetchSegment(points) {
+  const lonlats = points.map(p => p.join(',')).join('|');
   const url = `https://brouter.de/brouter?lonlats=${lonlats}&profile=trekking&alternativeidx=0&format=geojson`;
-  process.stdout.write(`Fetching ${c.id}... `);
   const res = await fetch(url);
   if (!res.ok) {
     console.error(`FAILED: ${res.status} ${await res.text()}`);
     process.exit(1);
   }
-  const gj = await res.json();
-  const f = gj.features[0];
-  const km = Math.round(Number(f.properties['track-length']) / 100) / 10;
+  const f = (await res.json()).features[0];
+  return {
+    meters: Number(f.properties['track-length']),
+    coordinates: f.geometry.coordinates,
+    messages: f.properties.messages,
+  };
+}
+
+for (const c of CORRIDORS) {
+  // A plain `points` corridor is just the one-segment case.
+  const segments = c.segments || [{ points: c.points }];
+  process.stdout.write(`Fetching ${c.id}... `);
+
+  const built = [];
+  for (const [i, seg] of segments.entries()) {
+    if (i) await new Promise(r => setTimeout(r, 1500)); // be polite between segments
+    const r = await fetchSegment(seg.points);
+    const trimmed = applyTrims(r.coordinates, MANUAL_TRIMS[c.id]);
+    let stretches = splitBySafety(trimmed, r.messages);
+    // Homeward segments are routed suburb-first like everything else; flip them
+    // so the line reads downtown -> suburb and its arrows point homeward.
+    if (seg.dir === 'home') {
+      stretches = stretches.reverse().map(s => ({ ...s, coords: [...s.coords].reverse() }));
+    }
+    built.push({ dir: seg.dir, meters: r.meters, stretches });
+  }
+
+  // Distances are per direction: shared segments plus that direction's own.
+  const forDir = dir => built.filter(s => !s.dir || s.dir === dir);
+  const metersFor = dir => forDir(dir).reduce((sum, s) => sum + s.meters, 0);
+  // The map is framed as "getting to work", so that is the headline distance.
+  const km = Math.round(metersFor('towork') / 100) / 10;
+  const kmHome = Math.round(metersFor('home') / 100) / 10;
   const minutes = Math.round((km / 18) * 60); // 18 km/h relaxed commuting pace
 
-  const trimmed = applyTrims(f.geometry.coordinates, MANUAL_TRIMS[c.id]);
-  const stretches = splitBySafety(trimmed, f.properties.messages);
-  const carFreeMeters = stretches
+  const outbound = forDir('towork').flatMap(s => s.stretches);
+  const carFreeMeters = outbound
     .filter(s => s.safety === 'carfree')
     .reduce((sum, s) => sum + s.meters, 0);
   const carfreePct = Math.round((carFreeMeters / (km * 1000)) * 100);
 
-  for (const s of stretches) {
-    features.push({
-      type: 'Feature',
-      properties: {
-        id: c.id,
-        name_en: c.name_en,
-        name_fr: c.name_fr,
-        desc_en: c.desc_en,
-        desc_fr: c.desc_fr,
-        color: c.color,
-        distance_km: km,
-        minutes,
-        carfree_pct: carfreePct,
-        safety: s.safety,
-      },
-      geometry: {
-        type: 'LineString',
-        // strip elevation, keep [lon, lat], 5-decimal precision (~1 m)
-        coordinates: s.coords.map(pt => [
-          Math.round(pt[0] * 1e5) / 1e5,
-          Math.round(pt[1] * 1e5) / 1e5,
-        ]),
-      },
-    });
+  let count = 0;
+  for (const segment of built) {
+    for (const s of segment.stretches) {
+      count++;
+      features.push({
+        type: 'Feature',
+        properties: {
+          id: c.id,
+          name_en: c.name_en,
+          name_fr: c.name_fr,
+          desc_en: c.desc_en,
+          desc_fr: c.desc_fr,
+          color: c.color,
+          distance_km: km,
+          minutes,
+          carfree_pct: carfreePct,
+          safety: s.safety,
+          // Only one-way sections are tagged; the map keys its arrows off this.
+          ...(segment.dir ? { dir: segment.dir } : {}),
+          ...(kmHome !== km ? { distance_km_home: kmHome } : {}),
+        },
+        geometry: {
+          type: 'LineString',
+          // strip elevation, keep [lon, lat], 5-decimal precision (~1 m)
+          coordinates: s.coords.map(pt => [
+            Math.round(pt[0] * 1e5) / 1e5,
+            Math.round(pt[1] * 1e5) / 1e5,
+          ]),
+        },
+      });
+    }
   }
 
-  console.log(`${km} km (~${minutes} min), ${stretches.length} stretches, ${carfreePct}% car-free`);
+  const twoWay = kmHome !== km ? `, ${kmHome} km home` : '';
+  console.log(`${km} km (~${minutes} min)${twoWay}, ${count} stretches, ${carfreePct}% car-free`);
   await new Promise(r => setTimeout(r, 1500)); // be polite to the public server
 }
 

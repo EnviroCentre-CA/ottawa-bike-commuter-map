@@ -19,7 +19,7 @@ possible:
 
 | Route                      | Distance | Car-free |
 | -------------------------- | -------- | -------- |
-| Alta Vista                 | 7.8 km   | 33%      |
+| Alta Vista                 | 8.4 km   | 36%      |
 | Barrhaven                  | 22.5 km  | 56%      |
 | Blackburn Hamlet           | 12.7 km  | 50%      |
 | Findlay Creek              | 19.1 km  | 58%      |
@@ -29,15 +29,25 @@ possible:
 | Orléans South             | 29.8 km  | 72%      |
 | South Keys / Hunt Club     | 11.4 km  | 51%      |
 | Stittsville / Kanata South | 30.3 km  | 90%      |
-| Vanier                     | 5.4 km   | 46%      |
+| Vanier                     | 8.4 km   | 28%      |
+
+Distances are for the ride **to** downtown; Vanier differs slightly on the way
+back (see below).
 
 Other features:
 
 - **Line thickness shows how protected each section is** — thick where the
   route is car-free, thin where it shares the road with traffic. Each route
   also reports the share of its length that is car-free.
+- **Some sections are one-way.** Where the better ride differs by direction,
+  the route splits into two lines with **arrows showing which way to ride**.
+  Vanier does this either side of St-Laurent Boulevard: outbound it swings
+  north via Guy Avenue, homeward it stays on McArthur Avenue. Arrows appear
+  from zoom 12 in, and the side panel explains them when such a route is
+  selected.
 - Selecting a route (from the list or by clicking its line) isolates it and
-  zooms to it; clicking the selected route again describes that section.
+  zooms to it; clicking the selected route again describes that section —
+  including which direction it is for, on a one-way section.
 - English/French toggle and a high-contrast accessible style variant.
 
 ## How it's built
@@ -95,6 +105,34 @@ Two things worth knowing when editing corridors:
   crossing artifacts. It is cosmetic only and does not change the routing —
   read the comments there before adding a box, as it is easy to delete a real
   turn by accident.
+
+#### Routes that differ by direction
+
+A corridor normally has one `points` array. To make part of it one-way, give it
+`segments` instead — each is routed as its own BRouter request:
+
+```js
+segments: [
+  { points: [START, SPLIT] },                    // ridden both ways
+  { dir: 'towork', points: [SPLIT, ...,  REJOIN] }, // outbound only
+  { dir: 'home',   points: [SPLIT, REJOIN] },       // return only
+  { points: [REJOIN, ..., DOWNTOWN] },           // ridden both ways
+]
+```
+
+Things to get right:
+
+- **Consecutive segments must share an endpoint**, or the drawn lines will not
+  meet. Pick split and rejoin coordinates that already lie on the route rather
+  than inventing them; the script reports nothing if they drift, but the map
+  will show a visible gap.
+- Write a `home` segment **suburb-first like every other segment**. The script
+  reverses its geometry on output, and that reversal is what makes the homeward
+  arrows point homeward — the map draws arrows along coordinate order.
+- Only directional segments get a `dir` property in the output, and the map's
+  arrow layer keys off `['has', 'dir']`. Shared sections stay unmarked.
+- `distance_km` is the outbound distance. When the return differs, features also
+  carry `distance_km_home`, which the section popup shows.
 
 ### Photo bubbles (currently off)
 

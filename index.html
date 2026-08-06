@@ -113,8 +113,8 @@
   }
   #showall:hover { border-color: var(--brand); color: var(--brand); }
   #showall.visible { display: block; }
-  #safety-note { display: none; font-size: 12px; color: var(--muted); margin-top: 8px; }
-  #safety-note.visible { display: block; }
+  #safety-note, #oneway-note { display: none; font-size: 12px; color: var(--muted); margin-top: 8px; }
+  #safety-note.visible, #oneway-note.visible { display: block; }
   .legend { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border); }
   .legend div { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--muted); padding: 3px 0; }
   .legend .swatch { flex: 0 0 22px; height: 0; }
@@ -123,6 +123,11 @@
   .swatch.oasis { border-top: 3px solid #006458; }
   .swatch.shared { border-top: 3px dashed #006458; }
   .swatch.lane { border-top: 3px solid #3a8878; opacity: .55; }
+  /* Stands in for the map's chevron; height 0 on .swatch would hide the glyph. */
+  .swatch.arrow {
+    height: auto; text-align: center; line-height: 1;
+    font-size: 19px; font-weight: 700; color: var(--chrome);
+  }
   footer {
     padding: 8px 16px;
     font-size: 10.5px; color: rgba(255,255,255,.85);
@@ -191,11 +196,13 @@
     <div id="route-list"></div>
     <button id="showall" data-i18n="showAll"></button>
     <p id="safety-note" data-i18n-html="safetyNote"></p>
+    <p id="oneway-note" data-i18n-html="onewayNote"></p>
     <div class="legend">
       <h2 data-i18n="legendHeading"></h2>
       <div><span class="swatch oasis"></span><span data-i18n="legendOasis"></span></div>
       <div><span class="swatch shared"></span><span data-i18n="legendShared"></span></div>
       <div><span class="swatch lane"></span><span data-i18n="legendLane"></span></div>
+      <div><span class="swatch arrow">›</span><span data-i18n="legendOneway"></span></div>
     </div>
   </div>
   <button id="panel-toggle" data-i18n="routesHeading"></button>
@@ -214,12 +221,17 @@ const I18N = {
     legendOasis: 'Protected bike lane or multi-use-pathway (car-free)',
     legendShared: 'Pedestrian priority pathway (car-free)',
     legendLane: 'On-street bike lane',
+    legendOneway: 'One-way section — arrows show which way to ride',
     showAll: 'Show all routes',
     safetyNote: 'Line thickness shows how protected each section is: <strong>thick = car-free, thin = shared with car traffic</strong>.',
+    onewayNote: 'This route splits in two for part of the way. Follow the arrows: one line is the ride <strong>to work</strong>, the other the ride <strong>home</strong>.',
     carFree: 'car-free',
     sectionCarfree: 'Car-free section',
     sectionLane: 'On-street bike lane section',
     sectionRoad: 'Section shared with car traffic',
+    dirTowork: 'Ride this way to work (heading downtown)',
+    dirHome: 'Ride this way home (leaving downtown)',
+    homeDistance: 'the ride home is',
     minutes: 'min',
     hours: 'hr',
     pace: 'at a relaxed pace',
@@ -238,12 +250,17 @@ const I18N = {
     legendOasis: 'Piste cyclable protégée ou sentier polyvalent (sans voitures)',
     legendShared: 'Sentier à priorité piétonne (sans voitures)',
     legendLane: 'Bande cyclable sur rue',
+    legendOneway: 'Section à sens unique — les flèches indiquent le sens',
     showAll: 'Afficher tous les trajets',
     safetyNote: 'L’épaisseur du trait indique le niveau de protection de chaque section : <strong>épais = sans voitures, mince = partagé avec la circulation automobile</strong>.',
+    onewayNote: 'Ce trajet se divise en deux sur une partie du parcours. Suivez les flèches : un tracé correspond à l’<strong>aller au travail</strong>, l’autre au <strong>retour à la maison</strong>.',
     carFree: 'sans voitures',
     sectionCarfree: 'Section sans voitures',
     sectionLane: 'Section sur bande cyclable',
     sectionRoad: 'Section partagée avec les voitures',
+    dirTowork: 'À suivre à l’aller au travail (vers le centre-ville)',
+    dirHome: 'À suivre au retour à la maison (depuis le centre-ville)',
+    homeDistance: 'le retour fait',
     minutes: 'min',
     hours: 'h',
     pace: 'à un rythme détendu',
@@ -306,6 +323,30 @@ async function loadStyle(key) {
   return styles[key];
 }
 
+/**
+ * Chevron used on one-way sections, drawn to a canvas rather than shipped as a
+ * sprite so the page stays dependency-free. It points along +x; MapLibre's
+ * `symbol-placement: line` rotates it to follow the line, so "right" means
+ * "forward along the coordinate order" — which is why fetch-routes.mjs
+ * reverses homeward segments.
+ */
+function addArrowImage() {
+  if (map.hasImage('dir-arrow')) return;
+  const S = 26;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = S;
+  const g = cv.getContext('2d');
+  const chevron = () => {
+    g.beginPath();
+    g.moveTo(8, 5.5); g.lineTo(18.5, 13); g.lineTo(8, 20.5);
+  };
+  g.lineJoin = g.lineCap = 'round';
+  // White halo first so the chevron stays readable over any route colour.
+  g.strokeStyle = '#ffffff'; g.lineWidth = 7.5; chevron(); g.stroke();
+  g.strokeStyle = '#14294d'; g.lineWidth = 3.4; chevron(); g.stroke();
+  map.addImage('dir-arrow', g.getImageData(0, 0, S, S));
+}
+
 function overlayLayers() {
   return [
     {
@@ -320,14 +361,49 @@ function overlayLayers() {
       layout: { 'line-cap': 'round', 'line-join': 'round' },
       paint: { 'line-color': ['get', 'color'], 'line-width': 4.5, 'line-opacity': 0.95 },
     },
+    {
+      // Only sections that differ by direction carry `dir`, so this layer is
+      // empty for every route that is ridden the same way both ways.
+      id: 'commuter-arrows',
+      type: 'symbol', source: 'commuter',
+      filter: ['has', 'dir'],
+      // Below this the one-way pair is too small to read as two lines.
+      minzoom: 12,
+      layout: {
+        'symbol-placement': 'line',
+        'symbol-spacing': 68,
+        'icon-image': 'dir-arrow',
+        'icon-size': 0.85,
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
+        'icon-rotation-alignment': 'map',
+        'icon-pitch-alignment': 'map',
+      },
+      paint: { 'icon-opacity': 1 },
+    },
   ];
 }
 
+/**
+ * Add (or re-add) the overlay. Every step is guarded individually rather than
+ * returning early on the source, because a setStyle diff can keep the source
+ * and layers while still clearing the image registry — bailing out on the
+ * source alone left the arrow layer pointing at a missing image.
+ */
 function addOverlay() {
-  if (!routesData || map.getSource('commuter')) return;
-  map.addSource('commuter', { type: 'geojson', data: routesData });
-  overlayLayers().forEach(l => map.addLayer(l));
+  if (!routesData) return;
+  addArrowImage(); // must exist before the symbol layer references it
+  if (!map.getSource('commuter')) {
+    map.addSource('commuter', { type: 'geojson', data: routesData });
+  }
+  overlayLayers().forEach(l => { if (!map.getLayer(l.id)) map.addLayer(l); });
   applySelection();
+}
+
+/** True when this route has sections that differ by direction of travel. */
+function hasDirections(id) {
+  return !!id && !!routesData
+    && routesData.features.some(f => f.properties.id === id && f.properties.dir);
 }
 
 function applySelection() {
@@ -351,10 +427,16 @@ function applySelection() {
   map.setPaintProperty('commuter-line', 'line-width', width);
   map.setPaintProperty('commuter-casing', 'line-opacity', dimCasing);
   map.setPaintProperty('commuter-casing', 'line-width', casingWidth);
+  // Arrows fade with their route, so a dimmed route's arrows do not read as
+  // belonging to the selected one.
+  map.setPaintProperty('commuter-arrows', 'icon-opacity', selectedId
+    ? ['case', ['==', ['get', 'id'], selectedId], 1, 0.15]
+    : 1);
   document.querySelectorAll('.route').forEach(el =>
     el.classList.toggle('active', el.dataset.id === selectedId));
   document.getElementById('showall').classList.toggle('visible', !!selectedId);
   document.getElementById('safety-note').classList.toggle('visible', !!selectedId);
+  document.getElementById('oneway-note').classList.toggle('visible', hasDirections(selectedId));
   updatePhotoBubbles();
 }
 
@@ -460,13 +542,18 @@ map.on('click', (e) => {
   const sectionLabel = {
     carfree: t('sectionCarfree'), lane: t('sectionLane'), road: t('sectionRoad'),
   }[p.safety] || '';
+  // One-way sections say so up front — it is the thing you need to know before
+  // the surface type.
+  const dirLabel = { towork: t('dirTowork'), home: t('dirHome') }[p.dir];
+  const homeNote = p.distance_km_home ? ` · ${t('homeDistance')} ${p.distance_km_home} km` : '';
   new maplibregl.Popup({ closeButton: false, maxWidth: '260px' })
     .setLngLat(e.lngLat)
     .setHTML(
       `<strong>${p['name_' + lang]}</strong><br>` +
       `${p['desc_' + lang]}<br>` +
+      (dirLabel ? `<strong>${dirLabel}</strong><br>` : '') +
       `<em>${sectionLabel}</em><br>` +
-      `<span style="color:#6c757d">${p.distance_km} km · ~${formatDuration(p.minutes)} ${t('pace')} · ${p.carfree_pct} % ${t('carFree')}</span>`)
+      `<span style="color:#6c757d">${p.distance_km} km · ~${formatDuration(p.minutes)} ${t('pace')} · ${p.carfree_pct} % ${t('carFree')}${homeNote}</span>`)
     .addTo(map);
 });
 map.on('mousemove', (e) => {
@@ -484,6 +571,9 @@ async function setMapStyle() {
 
 // Overlay is (re)added on every style.load — initial load and HC switches.
 map.on('style.load', addOverlay);
+// Backstop for the same race: if the arrow is ever asked for before it is
+// registered, register it on demand rather than drawing nothing.
+map.on('styleimagemissing', (e) => { if (e.id === 'dir-arrow') addArrowImage(); });
 window._map = map; // debugging hook
 
 (async function boot() {
