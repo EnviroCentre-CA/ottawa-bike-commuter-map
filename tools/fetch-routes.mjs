@@ -75,6 +75,11 @@ const CORRIDORS = [
     color: '#3CB44B',
     points: [
       [-75.56650, 45.43093], // start
+      [-75.623446, 45.421630], // Cyrville Rd at Lavrie Ave — leave the diagonal pathway here
+      [-75.622716, 45.419368], // Kenaston St, east end
+      [-75.629164, 45.416648], // Kenaston St, west end
+      [-75.633516, 45.419068], // multi-use pathway (keeps it off the intersection to the south)
+      [-75.634724, 45.419118], // bike crossing at the intersection just west
       [-75.66527, 45.41254], // Hurdman
       DOWNTOWN,
     ],
@@ -173,7 +178,7 @@ const CORRIDORS = [
     name_fr: 'Alta Vista',
     desc_en: 'From Alta Vista to downtown',
     desc_fr: 'D’Alta Vista jusqu’au centre-ville',
-    color: '#469990',
+    color: '#d7ea2c',
     points: [
       [-75.627150, 45.394982], // start
       DOWNTOWN,

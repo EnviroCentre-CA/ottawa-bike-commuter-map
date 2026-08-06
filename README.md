@@ -19,7 +19,7 @@ possible:
 |---|---|---|
 | Alta Vista | 7.8 km | 33% |
 | Barrhaven | 22.5 km | 56% |
-| Blackburn Hamlet | 12.6 km | 44% |
+| Blackburn Hamlet | 12.7 km | 50% |
 | Findlay Creek | 19.1 km | 58% |
 | Kanata North | 24.9 km | 86% |
 | Nepean | 15.5 km | 66% |

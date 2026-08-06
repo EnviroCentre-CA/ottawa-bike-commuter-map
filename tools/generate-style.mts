@@ -36,7 +36,10 @@ const root = path.resolve(import.meta.dirname, '..');
 // variants. The commuter route overlay is added client-side (ids commuter-*),
 // so it is never affected here.
 const BASE_CYCLING_ID = /(^|-)(oasis|cycling-route|mtb-route|road-cycleway)/;
-const MUTE_OPACITY = 0.15;
+// 0.15 read as almost invisible; the upstream original is ~0.7–0.8. 0.3 lets
+// the base cycling network register as context without competing with the
+// coloured commuter routes.
+const MUTE_OPACITY = 0.3;
 
 function muteBaseCycling(style: { layers: { id: string; type: string; paint?: Record<string, unknown> }[] }) {
   for (const layer of style.layers) {
