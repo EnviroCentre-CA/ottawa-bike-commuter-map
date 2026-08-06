@@ -27,6 +27,29 @@ const DOWNTOWN = [-75.696914, 45.419324]; // Laurier Ave W & O'Connor St
 
 const CORRIDORS = [
   {
+    id: 'orleans-south',
+    name_en: 'Orléans South',
+    name_fr: 'Orléans-Sud',
+    desc_en: 'North on Portobello and Trim Road, then the Ottawa River Pathway west',
+    desc_fr: 'Vers le nord par Portobello et le chemin Trim, puis le sentier de la rivière des Outaouais vers l’ouest',
+    color: '#800000',
+    points: [
+      [-75.463397, 45.459442], // start, Nantes St (mid-block, east of Portobello)
+      [-75.465025, 45.478363], // Portobello Blvd, north end
+      [-75.477830, 45.489322], // Trim Rd, over Highway 174
+      [-75.481182, 45.498095], // Trim Rd, north end at the river
+      [-75.482415, 45.497338], // two-way bike lane, south side of Jeanne-d'Arc Blvd N
+      [-75.493933, 45.493537], // Ottawa River Pathway, heading west
+      // From here it shares the Orléans corridor exactly
+      [-75.63173, 45.46078], // left at the split to avoid gravel path
+      [-75.64002, 45.45753], // south of airport
+      [-75.64901, 45.45812], // west of airport
+      [-75.67229, 45.45716], // right before river house
+      [-75.69869, 45.42321], // Wellington and occonor
+      DOWNTOWN,
+    ],
+  },
+  {
     id: 'orleans',
     name_en: 'Orléans',
     name_fr: 'Orléans',
@@ -57,6 +80,16 @@ const CORRIDORS = [
     ],
   },
   {
+    id: 'stittsville',
+    name_en: 'Stittsville / Kanata South',
+    name_fr: 'Stittsville / Kanata Sud',
+    desc_en: 'Trans Canada Trail through Bells Corners, joining the Watts Creek Pathway',
+    desc_fr: 'Sentier transcanadien via Bells Corners, rejoignant le sentier du ruisseau Watts',
+    color: '#911EB4',
+    points: [[-75.9250, 45.2585], [-75.83670, 45.32471], DOWNTOWN],
+    
+  },
+  {
     id: 'kanata',
     name_en: 'Kanata North',
     name_fr: 'Kanata Nord',
@@ -69,15 +102,6 @@ const CORRIDORS = [
       [-75.754068, 45.395383], // Scott St
       DOWNTOWN
     ],
-  },
-  {
-    id: 'stittsville',
-    name_en: 'Stittsville / Kanata South',
-    name_fr: 'Stittsville / Kanata Sud',
-    desc_en: 'Trans Canada Trail through Bells Corners, joining the Watts Creek Pathway',
-    desc_fr: 'Sentier transcanadien via Bells Corners, rejoignant le sentier du ruisseau Watts',
-    color: '#911EB4',
-    points: [[-75.9250, 45.2585], [-75.83670, 45.32471], DOWNTOWN],
   },
   {
     id: 'nepean',
@@ -115,20 +139,6 @@ const CORRIDORS = [
     ],
   },
   {
-    id: 'south-keys',
-    name_en: 'South Keys / Hunt Club',
-    name_fr: 'South Keys / Hunt Club',
-    desc_en: 'Sawmill Creek Pathway to the Rideau Canal Eastern Pathway',
-    desc_fr: 'Sentier du ruisseau Sawmill jusqu’au sentier est du canal Rideau',
-    color: '#F032E6',
-    points: [
-      [-75.6478, 45.3524], // start
-      [-75.67400, 45.38201], // Sawmill Creek / canal corridor
-      [-75.678811, 45.398451], // early left off Riverdale Ave onto Echo Dr
-      DOWNTOWN,
-    ],
-  },
-  {
     id: 'findlay-creek',
     name_en: 'Findlay Creek',
     name_fr: 'Findlay Creek',
@@ -140,6 +150,20 @@ const CORRIDORS = [
       [-75.67400, 45.38201], // Sawmill Creek / canal corridor
       [-75.678811, 45.398451], // early left off Riverdale Ave onto Echo Dr
       [-75.680142, 45.418484], // canal pathway near downtown
+      DOWNTOWN,
+    ],
+  },
+  {
+    id: 'south-keys',
+    name_en: 'South Keys / Hunt Club',
+    name_fr: 'South Keys / Hunt Club',
+    desc_en: 'Sawmill Creek Pathway to the Rideau Canal Eastern Pathway',
+    desc_fr: 'Sentier du ruisseau Sawmill jusqu’au sentier est du canal Rideau',
+    color: '#F032E6',
+    points: [
+      [-75.6478, 45.3524], // start
+      [-75.67400, 45.38201], // Sawmill Creek / canal corridor
+      [-75.678811, 45.398451], // early left off Riverdale Ave onto Echo Dr
       DOWNTOWN,
     ],
   },
@@ -184,6 +208,16 @@ const MANUAL_TRIMS = {
   // the junction so the line follows O'Connor's real alignment (per OSM:
   // 45.42265,-75.69991 -> 45.42257,-75.69984 -> 45.42200,-75.69935)
   orleans: [[-75.70010, 45.4224, -75.69993, 45.4227]],
+  'orleans-south': [
+    // Orléans South rejoins the Orléans corridor, so it hits the same corner
+    [-75.70010, 45.4224, -75.69993, 45.4227],
+    // Trim Rd corner: 7 m out-and-back onto the roadway before the turn
+    [-75.48122, 45.49808, -75.48114, 45.49812],
+    // NOTE: do not trim around 45.4972,-75.4833 — that is the east end of the
+    // Ottawa River Pathway at Tweddle Rd. The route turns north off Jeanne-d'Arc
+    // and then west onto the pathway there; trimming it makes the line cut the
+    // corner diagonally instead of following the real two-turn geometry.
+  ],
   // Madawaska Dr right turn: drop the little out-and-back stub west of the junction
   nepean: [[-75.69900, 45.39784, -75.69894, 45.39788]],
 };

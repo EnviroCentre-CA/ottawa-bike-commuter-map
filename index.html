@@ -221,6 +221,7 @@ const I18N = {
     sectionLane: 'On-street bike lane section',
     sectionRoad: 'Section shared with car traffic',
     minutes: 'min',
+    hours: 'hr',
     pace: 'at a relaxed pace',
     langButton: 'FR',
     highContrast: 'High contrast',
@@ -244,6 +245,7 @@ const I18N = {
     sectionLane: 'Section sur bande cyclable',
     sectionRoad: 'Section partagée avec les voitures',
     minutes: 'min',
+    hours: 'h',
     pace: 'à un rythme détendu',
     langButton: 'EN',
     highContrast: 'Contraste élevé',
@@ -262,6 +264,20 @@ let routesData = null;
 const styles = {};
 
 function t(key) { return I18N[lang][key]; }
+
+/**
+ * Ride time as text. Under an hour reads as plain minutes; an hour or more
+ * splits into hours and minutes, because "101 min" makes a reader do the
+ * arithmetic to work out whether a commute is realistic.
+ */
+function formatDuration(mins) {
+  if (mins < 60) return `${mins} ${t('minutes')}`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m === 0
+    ? `${h} ${t('hours')}`
+    : `${h} ${t('hours')} ${m} ${t('minutes')}`;
+}
 
 function applyI18n() {
   document.documentElement.lang = lang;
@@ -424,7 +440,7 @@ function renderRouteList() {
     btn.innerHTML =
       `<span class="chip" style="background:${p.color}"></span>` +
       `<span><strong>${p['name_' + lang]}</strong><br>` +
-      `<span class="meta">${p.distance_km} km · ~${p.minutes} ${t('minutes')} · ${p.carfree_pct} % ${t('carFree')}</span></span>`;
+      `<span class="meta">${p.distance_km} km · ~${formatDuration(p.minutes)} · ${p.carfree_pct} % ${t('carFree')}</span></span>`;
     btn.addEventListener('click', () => selectRoute(p.id));
     list.appendChild(btn);
   }
@@ -450,7 +466,7 @@ map.on('click', (e) => {
       `<strong>${p['name_' + lang]}</strong><br>` +
       `${p['desc_' + lang]}<br>` +
       `<em>${sectionLabel}</em><br>` +
-      `<span style="color:#6c757d">${p.distance_km} km · ~${p.minutes} ${t('minutes')} ${t('pace')} · ${p.carfree_pct} % ${t('carFree')}</span>`)
+      `<span style="color:#6c757d">${p.distance_km} km · ~${formatDuration(p.minutes)} ${t('pace')} · ${p.carfree_pct} % ${t('carFree')}</span>`)
     .addTo(map);
 });
 map.on('mousemove', (e) => {
