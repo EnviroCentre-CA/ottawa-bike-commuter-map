@@ -37,6 +37,10 @@ Other features:
 - **Line thickness shows how protected each section is** — thick where the
   route is car-free, thin where it shares the road with traffic. Each route
   also reports the share of its length that is car-free.
+- **Ride times account for stopping**, not just distance, so a pathway corridor
+  reads faster than an on-street one of the same length (15–17 km/h effective).
+  The section popup breaks out how much of the estimate is spent at red lights.
+  See "Ride time estimates" below.
 - **Some sections are one-way.** Where the better ride differs by direction,
   the route splits into two lines with **arrows showing which way to ride**.
   Vanier does this either side of St-Laurent Boulevard: outbound it swings
@@ -104,6 +108,69 @@ Two things worth knowing when editing corridors:
   read the comments there before adding a box, as it is easy to delete a real
   turn by accident.
 
+#### Ride time estimates
+
+Times are **not** BRouter's `total-time`. That figure is a constant-power physics
+estimate (100 W pushing 90 kg, set in `trekking.brf`) for a rider who never
+stops: it puts every corridor at 19–21 km/h and actually rates signal-dense
+painted lanes *faster* than pathways, because they are straighter. Measured over
+these routes it gave 20.0 km/h on car-free sections against 21.0 km/h on painted
+lanes — backwards for our purpose.
+
+What actually separates a pathway commute from an on-street one is stopping.
+Across these corridors, painted lanes carry about **5.6 traffic signals per km
+against 0.8 on cycleways**. So `fetch-routes.mjs` builds the time itself, in two
+parts, from tags already present in the BRouter response:
+
+- **cruise time** — segment length ÷ a free-flow speed from `CRUISE_KMH`, chosen
+  by highway/cycleway tags, cut by `UNPAVED_FACTOR` where `surface` is gravel or
+  similar. These speeds sit deliberately close together (17.5–18.5 km/h for
+  anything ridable); the spread between routes is meant to come from stops, not
+  from guessing that one surface is quicker.
+- **stop delay** — an expected cost per traffic control the route passes, read
+  from the `NodeTags` column: `SIGNAL_DELAY` for traffic signals, `STOP_DELAY`
+  for stop and give-way signs, plus smaller costs for uncontrolled crossings and
+  barriers.
+
+This yields 15–17 km/h effective, and the ranking tracks infrastructure quality
+(correlation between car-free share and effective speed is r ≈ 0.74) where the
+old flat 18 km/h made every route's time a restatement of its distance.
+
+Each route also publishes `stop_minutes` and `signals`, which the section popup
+uses to say *"includes about 5 min stopped, at 21 sets of traffic lights"*.
+
+**Controls are de-duplicated per junction, and this matters more than it sounds.**
+OSM maps one signalised intersection as several nodes — the junction node, plus a
+signalised crossing node on each approach leg — and BRouter reports every one.
+Charging each would bill a single intersection two to four times: on Vanier it
+turned 21 real junctions into 49, adding six minutes of phantom waiting.
+`summarizeControls()` collapses controls within `JUNCTION_RADIUS_M` (30 m) into
+one event, charged for whichever control in the cluster costs most. Note that the
+clustering runs across a whole direction rather than per segment, because a
+junction can sit exactly on a segment boundary — Vanier's REJOIN does.
+
+**Recalibrating.** `SIGNAL_DELAY` and `STOP_DELAY` are the only tuned numbers,
+and their weight varies — from about 4% of total time on Stittsville to 16% on
+Vanier. To fit them, time two real rides (one short stop-heavy corridor such as
+Vanier, one long pathway one such as Kanata North) and solve for the pair; two
+measurements fit two constants. Everything else in the model is either measured
+(distances, junction counts) or a narrow band that barely moves the result.
+
+For reference, Google Maps gives 28 min for the Vanier corridor against this
+model's 33 — Google's figure implies 18 km/h, which leaves no room for stopping at
+21 signalised junctions, so some of that gap is theirs rather than ours. Still
+worth checking against a real ride before trusting either.
+
+One residual bias: `NodeTags` flags every junction the route *passes*, including
+ones a rider rolls straight through with priority. De-duplication fixes the
+multiple-nodes-per-junction problem but not this one, so counts still lean high.
+Fit the delay constants downward to absorb it rather than trying to work out which
+junctions genuinely require a stop.
+
+Elevation is deliberately ignored. BRouter does return it (the script strips a
+third coordinate from each point), but Ottawa is flat enough that it would not
+earn the complexity — these routes show 21–67 m of filtered ascent over 8–30 km.
+
 #### Routes that differ by direction
 
 A corridor normally has one `points` array. To make part of it one-way, give it
@@ -129,8 +196,10 @@ Things to get right:
   arrows point homeward — the map draws arrows along coordinate order.
 - Only directional segments get a `dir` property in the output, and the map's
   arrow layer keys off `['has', 'dir']`. Shared sections stay unmarked.
-- `distance_km` is the outbound distance. When the return differs, features also
-  carry `distance_km_home`, which the section popup shows.
+- `distance_km` and `minutes` are the outbound figures. When the return differs,
+  features also carry `distance_km_home` and `minutes_home`, which the section
+  popup shows. The two directions are timed separately, so a route can take
+  longer home even over a shorter distance if it crosses more signals.
 
 ### Favicon
 

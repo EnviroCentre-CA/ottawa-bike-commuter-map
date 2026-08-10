@@ -351,6 +351,175 @@ function classify(wayTagsStr) {
 }
 
 // ---------------------------------------------------------------------------
+// Ride time
+// ---------------------------------------------------------------------------
+// BRouter reports its own `total-time`, but it is a constant-power physics
+// estimate (100 W pushing 90 kg, per trekking.brf) for a rider who never
+// stops. It puts every corridor at 19-21 km/h and actually rates signal-dense
+// painted lanes *faster* than pathways, because they are straighter — the
+// opposite of how these routes really ride.
+//
+// What separates a pathway commute from an on-street one is stopping. Measured
+// over these corridors, painted lanes carry ~5.6 traffic signals per km against
+// ~0.8 on cycleways. So time is built from two parts:
+//
+//   cruise time   distance / a free-flow speed for that kind of way
+//   stop delay    an expected cost per traffic control the route passes
+//
+// The speeds sit deliberately close together: the spread between corridors is
+// meant to come from the stop counts, observable in OSM, rather than from
+// guessing that one kind of pavement is quicker. Only genuinely slower going
+// (pedestrian-priority footways, unpaved surfaces) gets a real cut.
+//
+// SIGNAL_DELAY and STOP_DELAY are the only tuned numbers in here. See
+// "Ride time estimates" in README.md before changing them.
+
+const CRUISE_KMH = {
+  cycleway: 18.5,     // dedicated cycleway, or a protected track alongside a road
+  pathway: 17.5,      // path/track — shared with pedestrians, so a little slower
+  lane: 18.5,         // painted on-street lane: straight and flat; the cost is the stops
+  quietStreet: 18.0,  // residential and similar, no bike infrastructure
+  road: 18.0,         // busier road, no bike infrastructure
+  footway: 13.0,      // sidewalk-style way where bikes are merely tolerated
+  footwayNoBikes: 10.0, // effectively pushing the bike
+};
+const QUIET_HIGHWAYS = new Set(['residential', 'living_street', 'unclassified', 'service']);
+const UNPAVED = /gravel|unpaved|ground|dirt|earth|grass|sand|compacted|fine_gravel|wood|pebble|cobble/;
+const UNPAVED_FACTOR = 0.80;
+
+// Expected seconds lost per control passed — an average over stopping and not
+// stopping, not a worst case. A signal is roughly a 50% chance of catching a
+// ~20 s wait; cyclists tend to roll stop signs rather than halt at them.
+const SIGNAL_DELAY = 10;
+const STOP_DELAY = 4;
+const CROSSING_DELAY = 1.5;
+const BARRIER_DELAY = 3;
+const SLOW_BARRIERS = /^(gate|cycle_barrier|bollard|lift_gate|swing_gate|stile|kissing_gate)$/;
+
+// One signalised junction is several OSM nodes: the junction node itself, plus a
+// signalised crossing node on each approach leg. BRouter reports every one, so
+// charging each would bill a single intersection two to four times — on Vanier
+// it turned 21 real junctions into 49. Controls closer together than this are
+// treated as one junction, where a rider stops at most once.
+//
+// 30 m sits inside a stable plateau: 25 m and 40 m both give 21 junctions on
+// Vanier, and only at ~60 m do genuinely separate intersections start merging.
+const JUNCTION_RADIUS_M = 30;
+
+function metersBetween(aLon, aLat, bLon, bLat) {
+  const R = 6371000, rad = Math.PI / 180;
+  const dLat = (bLat - aLat) * rad, dLon = (bLon - aLon) * rad;
+  const h = Math.sin(dLat / 2) ** 2
+    + Math.cos(aLat * rad) * Math.cos(bLat * rad) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+/** Free-flow speed in km/h for the way a segment runs along. */
+function cruiseKmh(tags) {
+  const cyclewayValues = [
+    tags.cycleway, tags['cycleway:left'], tags['cycleway:right'], tags['cycleway:both'],
+  ].filter(Boolean);
+
+  let kmh;
+  if (tags.highway === 'cycleway') kmh = CRUISE_KMH.cycleway;
+  else if (CAR_FREE_HIGHWAYS.has(tags.highway)) kmh = CRUISE_KMH.pathway;
+  else if (FOOT_HIGHWAYS.has(tags.highway)) {
+    kmh = BIKES_ALLOWED.has(tags.bicycle) ? CRUISE_KMH.footway : CRUISE_KMH.footwayNoBikes;
+  } else if (cyclewayValues.some(v => v === 'track' || v === 'separate')) kmh = CRUISE_KMH.cycleway;
+  else if (cyclewayValues.some(v => /lane|shared|share_busway|opposite/.test(v))) kmh = CRUISE_KMH.lane;
+  else if (QUIET_HIGHWAYS.has(tags.highway)) kmh = CRUISE_KMH.quietStreet;
+  else kmh = CRUISE_KMH.road;
+
+  if (UNPAVED.test(tags.surface || '')) kmh *= UNPAVED_FACTOR;
+  return kmh;
+}
+
+/**
+ * Seconds lost at one route node, plus which kind of control it was. Checked
+ * signals-first because a signalised crossing carries both `highway=crossing`
+ * and `crossing=traffic_signals`, and it should count once, as a signal.
+ */
+function nodeDelay(tags) {
+  if (tags.highway === 'traffic_signals' || tags.crossing === 'traffic_signals') {
+    return { seconds: SIGNAL_DELAY, kind: 'signals' };
+  }
+  if (tags.highway === 'stop' || tags.highway === 'give_way') {
+    return { seconds: STOP_DELAY, kind: 'stopSigns' };
+  }
+  if (tags.highway === 'crossing') return { seconds: CROSSING_DELAY, kind: 'crossings' };
+  if (SLOW_BARRIERS.test(tags.barrier || '')) return { seconds: BARRIER_DELAY, kind: 'barriers' };
+  return { seconds: 0, kind: null };
+}
+
+/**
+ * Walk every row of a segment's message table for cruise time, and collect the
+ * traffic controls it passes without costing them yet — de-duplication has to
+ * happen across the whole direction, because a junction sitting on a segment
+ * boundary (REJOIN is one) appears at the end of one segment and the start of
+ * the next.
+ *
+ * Deliberately independent of splitBySafety, so the figures cover the whole
+ * segment even where a manual trim drops a point from the drawn line.
+ *
+ * NodeTags use the same "k=v k=v" encoding as WayTags, so parseWayTags reads both.
+ */
+function estimateTiming(messages) {
+  const header = messages[0];
+  const iLon = header.indexOf('Longitude');
+  const iLat = header.indexOf('Latitude');
+  const iDist = header.indexOf('Distance');
+  const iWayTags = header.indexOf('WayTags');
+  const iNodeTags = header.indexOf('NodeTags');
+
+  let cruiseSeconds = 0;
+  const controls = [];
+  for (const row of messages.slice(1)) {
+    const meters = Number(row[iDist]) || 0;
+    cruiseSeconds += meters / (cruiseKmh(parseWayTags(row[iWayTags])) * (1000 / 3600));
+
+    const { seconds, kind } = nodeDelay(parseWayTags(row[iNodeTags]));
+    if (kind) {
+      controls.push({
+        lon: Number(row[iLon]) / 1e6,
+        lat: Number(row[iLat]) / 1e6,
+        seconds, kind,
+      });
+    }
+  }
+  return { cruiseSeconds, controls };
+}
+
+/**
+ * Collapse controls belonging to the same junction, then cost them. Expects the
+ * list in travel order, so consecutive entries can be chained into a cluster;
+ * a cluster is charged once, for whichever of its controls costs most (a
+ * signalised junction that also carries crossing nodes is a signal, not both).
+ */
+function summarizeControls(controls) {
+  const out = { delaySeconds: 0, signals: 0, stopSigns: 0, crossings: 0, barriers: 0 };
+  let cluster = null;
+  const flush = () => {
+    if (!cluster) return;
+    out.delaySeconds += cluster.seconds;
+    out[cluster.kind]++;
+    cluster = null;
+  };
+
+  for (const c of controls) {
+    if (cluster && metersBetween(cluster.lon, cluster.lat, c.lon, c.lat) <= JUNCTION_RADIUS_M) {
+      if (c.seconds > cluster.seconds) { cluster.seconds = c.seconds; cluster.kind = c.kind; }
+      // Chain from the newest node, so a wide junction stays one cluster.
+      cluster.lon = c.lon; cluster.lat = c.lat;
+    } else {
+      flush();
+      cluster = { ...c };
+    }
+  }
+  flush();
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // Split a BRouter track into contiguous safety stretches
 // ---------------------------------------------------------------------------
 
@@ -413,21 +582,41 @@ function splitBySafety(coordinates, messages) {
 const root = path.resolve(import.meta.dirname, '..');
 const features = [];
 
-/** One BRouter request. Returns raw geometry plus the way-tag message table. */
+/**
+ * One BRouter request, retried on failure. The public instance sheds load with
+ * "killed by thread-priority-watchdog", which is transient — without a retry a
+ * single blip throws away every route fetched so far.
+ */
 async function fetchSegment(points) {
   const lonlats = points.map(p => p.join(',')).join('|');
   const url = `https://brouter.de/brouter?lonlats=${lonlats}&profile=trekking&alternativeidx=0&format=geojson`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    console.error(`FAILED: ${res.status} ${await res.text()}`);
-    process.exit(1);
+
+  const ATTEMPTS = 5;
+  for (let attempt = 1; ; attempt++) {
+    let problem;
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        const f = (await res.json()).features[0];
+        return {
+          meters: Number(f.properties['track-length']),
+          coordinates: f.geometry.coordinates,
+          messages: f.properties.messages,
+        };
+      }
+      problem = `${res.status} ${(await res.text()).trim()}`;
+    } catch (err) {
+      problem = err.message;
+    }
+
+    if (attempt === ATTEMPTS) {
+      console.error(`FAILED after ${ATTEMPTS} attempts: ${problem}`);
+      process.exit(1);
+    }
+    const backoff = 5000 * attempt;
+    process.stdout.write(`\n  retry ${attempt}/${ATTEMPTS - 1} in ${backoff / 1000}s (${problem})... `);
+    await new Promise(r => setTimeout(r, backoff));
   }
-  const f = (await res.json()).features[0];
-  return {
-    meters: Number(f.properties['track-length']),
-    coordinates: f.geometry.coordinates,
-    messages: f.properties.messages,
-  };
 }
 
 for (const c of CORRIDORS) {
@@ -446,22 +635,42 @@ for (const c of CORRIDORS) {
     if (seg.dir === 'home') {
       stretches = stretches.reverse().map(s => ({ ...s, coords: [...s.coords].reverse() }));
     }
-    built.push({ dir: seg.dir, meters: r.meters, stretches });
+    built.push({ dir: seg.dir, meters: r.meters, stretches, timing: estimateTiming(r.messages) });
   }
 
-  // Distances are per direction: shared segments plus that direction's own.
+  // Everything below is per direction: shared segments plus that direction's own.
   const forDir = dir => built.filter(s => !s.dir || s.dir === dir);
   const metersFor = dir => forDir(dir).reduce((sum, s) => sum + s.meters, 0);
-  // The map is framed as "getting to work", so that is the headline distance.
-  const km = Math.round(metersFor('towork') / 100) / 10;
-  const kmHome = Math.round(metersFor('home') / 100) / 10;
-  const minutes = Math.round((km / 18) * 60); // 18 km/h relaxed commuting pace
+  // Cruise time adds up per segment, but controls are de-duplicated across the
+  // whole direction at once. Segments are listed start-to-downtown and a `home`
+  // segment is written suburb-first like the rest, so concatenating their
+  // controls gives one spatially continuous run for the clustering to walk.
+  const timingFor = dir => {
+    const segs = forDir(dir);
+    const cruiseSeconds = segs.reduce((sum, s) => sum + s.timing.cruiseSeconds, 0);
+    const controls = summarizeControls(segs.flatMap(s => s.timing.controls));
+    return { seconds: cruiseSeconds + controls.delaySeconds, ...controls };
+  };
+
+  // The map is framed as "getting to work", so that is the headline direction.
+  const outboundMeters = metersFor('towork');
+  const homeMeters = metersFor('home');
+  const km = Math.round(outboundMeters / 100) / 10;
+  const kmHome = Math.round(homeMeters / 100) / 10;
+
+  // Times come off raw metres, not the rounded km, so a 0.05 km rounding does
+  // not move the estimate.
+  const outboundTiming = timingFor('towork');
+  const homeTiming = timingFor('home');
+  const minutes = Math.round(outboundTiming.seconds / 60);
+  const minutesHome = Math.round(homeTiming.seconds / 60);
+  const stopMinutes = Math.round(outboundTiming.delaySeconds / 60);
 
   const outbound = forDir('towork').flatMap(s => s.stretches);
   const carFreeMeters = outbound
     .filter(s => s.safety === 'carfree')
     .reduce((sum, s) => sum + s.meters, 0);
-  const carfreePct = Math.round((carFreeMeters / (km * 1000)) * 100);
+  const carfreePct = Math.round((carFreeMeters / outboundMeters) * 100);
 
   let count = 0;
   for (const segment of built) {
@@ -480,9 +689,14 @@ for (const c of CORRIDORS) {
           minutes,
           carfree_pct: carfreePct,
           safety: s.safety,
+          // How much of `minutes` is spent stopped, and at how many lights —
+          // the popup uses these to explain why a pathway route rides quicker.
+          stop_minutes: stopMinutes,
+          signals: outboundTiming.signals,
           // Only one-way sections are tagged; the map keys its arrows off this.
           ...(segment.dir ? { dir: segment.dir } : {}),
           ...(kmHome !== km ? { distance_km_home: kmHome } : {}),
+          ...(minutesHome !== minutes ? { minutes_home: minutesHome } : {}),
         },
         geometry: {
           type: 'LineString',
@@ -496,8 +710,12 @@ for (const c of CORRIDORS) {
     }
   }
 
-  const twoWay = kmHome !== km ? `, ${kmHome} km home` : '';
-  console.log(`${km} km (~${minutes} min)${twoWay}, ${count} stretches, ${carfreePct}% car-free`);
+  const twoWay = kmHome !== km || minutesHome !== minutes
+    ? `, home ${kmHome} km/${minutesHome} min` : '';
+  const kmh = (outboundMeters / 1000) / (outboundTiming.seconds / 3600);
+  console.log(`${km} km (~${minutes} min, ${kmh.toFixed(1)} km/h; ${stopMinutes} min stopped at ` +
+    `${outboundTiming.signals} lights + ${outboundTiming.stopSigns} stops)${twoWay}, ` +
+    `${count} stretches, ${carfreePct}% car-free`);
   await new Promise(r => setTimeout(r, 1500)); // be polite to the public server
 }
 

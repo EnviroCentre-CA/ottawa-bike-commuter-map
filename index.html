@@ -143,6 +143,56 @@
   }
   footer strong { color: #fff; }
   footer a { color: #fff; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+  /* "How ride times are estimated" — a button, because it opens a dialog rather
+     than going anywhere, but styled as a link so it reads like the credits. */
+  .how-times-cue {
+    font: inherit; padding: 0;
+    border: 0; background: none;
+    text-decoration: underline; text-underline-offset: 2px;
+    cursor: pointer;
+  }
+  footer .how-times-cue { color: #fff; font-weight: 600; }
+  /* In the map popup it sits under the stats, so it takes the accent colour. */
+  .maplibregl-popup-content .how-times-cue {
+    display: inline-block; margin-top: 7px;
+    font-size: 11.5px; font-weight: 600; color: var(--brand);
+  }
+  #how-times {
+    max-width: 470px; width: calc(100% - 32px);
+    /* The `* { margin: 0 }` reset above wipes out <dialog>'s default
+       `margin: auto`, which is what centres a modal — put it back. */
+    margin: auto;
+    /* Cap the height so the text scrolls instead of running off a short screen
+       (a phone held sideways). dvh accounts for mobile browser chrome; the vh
+       line above it is the fallback. */
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    padding: 0; border: 1px solid var(--chrome-line); border-radius: 10px;
+    background: var(--card); color: var(--ink);
+    box-shadow: 0 8px 32px rgba(0,0,0,.3);
+  }
+  /* Scoped to [open]: setting display on the dialog itself would beat the
+     browser's `display: none` and leave the modal permanently on screen. */
+  #how-times[open] { display: flex; flex-direction: column; }
+  #how-times::backdrop { background: rgba(7,21,70,.45); }
+  #how-times a { color: var(--brand); text-decoration: underline; text-underline-offset: 2px; }
+  #how-times .dlg-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    flex: 0 0 auto;
+    padding: 10px 14px;
+    background: var(--chrome); color: #fff;
+  }
+  #how-times h2 { font-size: 15px; font-weight: 700; color: #fff; }
+  #how-times .dlg-close {
+    font: inherit; font-size: 13px; font-weight: 600;
+    padding: 4px 11px;
+    border: 1px solid rgba(255,255,255,.75); border-radius: 3px;
+    background: transparent; color: #fff;
+    cursor: pointer; flex: 0 0 auto;
+  }
+  #how-times .dlg-close:hover { background: rgba(255,255,255,.14); }
+  #how-times .dlg-body { padding: 14px; font-size: 13.5px; line-height: 1.55; overflow-y: auto; }
+  #how-times .dlg-body p + p { margin-top: 11px; }
   /* MapLibre popups and attribution ship their own font stack — align with the site */
   .maplibregl-popup-content, .maplibregl-ctrl-attrib {
     font-family: Mulish, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
@@ -215,7 +265,18 @@
   <button id="panel-toggle" data-i18n="routesHeading"></button>
 </div>
 
-<footer data-i18n-html="credits"></footer>
+<footer>
+  <span data-i18n-html="credits"></span> ·
+  <button type="button" class="how-times-cue" data-how-times data-i18n="howTimesLink"></button>
+</footer>
+
+<dialog id="how-times" aria-labelledby="how-times-title">
+  <div class="dlg-head">
+    <h2 id="how-times-title" data-i18n="howTimesTitle"></h2>
+    <button type="button" class="dlg-close" data-i18n="close"></button>
+  </div>
+  <div class="dlg-body" data-i18n-html="howTimesBody"></div>
+</dialog>
 
 <script src="vendor/maplibre-gl.js"></script>
 <script>
@@ -239,6 +300,25 @@ const I18N = {
     dirTowork: 'Ride this way to work (heading downtown)',
     dirHome: 'Ride this way home (leaving downtown)',
     homeDistance: 'the ride home is',
+    stopNote: 'Includes about {m} min stopped, at {n} sets of traffic lights.',
+    close: 'Close',
+    howTimesLink: 'How ride times are estimated',
+    howTimesTitle: 'How ride times are estimated',
+    howTimesBody:
+      '<p>Each route is measured from OpenStreetMap data, and the estimated time is ' +
+      'built in two parts:</p>' +
+      '<p>First, <strong>riding time</strong>: a cruising speed of 18 km/h is applied ' +
+      'along the whole route. This speed is representative of a comfortable and ' +
+      'accessible urban cycling speed. It is the average speed used by ' +
+      '<a href="https://www150.statcan.gc.ca/n1/pub/18-001-x/18-001-x2024005-eng.htm" ' +
+      'target="_blank" rel="noopener">Statistics Canada</a> when measuring access to ' +
+      'services by cycling.</p>' +
+      '<p>Second, <strong>time spent stopped</strong>. The map counts the traffic ' +
+      'lights, stop signs and crossings each route passes, and allows for a wait at ' +
+      'each one. This is why a longer route on a multi-use pathway can still be ' +
+      'quicker than a shorter one through busy streets.</p>' +
+      '<p>These are estimates. Weather, wind, how busy the pathways are and your own ' +
+      'pace will all change the number.</p>',
     minutes: 'min',
     hours: 'hr',
     pace: 'at a relaxed pace',
@@ -268,6 +348,26 @@ const I18N = {
     dirTowork: 'À suivre à l’aller au travail (vers le centre-ville)',
     dirHome: 'À suivre au retour à la maison (depuis le centre-ville)',
     homeDistance: 'le retour fait',
+    stopNote: 'Comprend environ {m} min d’arrêt, à {n} feux de circulation.',
+    close: 'Fermer',
+    howTimesLink: 'Comment les durées sont estimées',
+    howTimesTitle: 'Comment les durées de trajet sont estimées',
+    howTimesBody:
+      '<p>Chaque trajet est mesuré à partir des données d’OpenStreetMap, et la durée ' +
+      'estimée est calculée en deux parties :</p>' +
+      '<p>D’abord, le <strong>temps de déplacement</strong> : une vitesse de 18 km/h est ' +
+      'appliquée sur tout le parcours. Cette vitesse correspond à un rythme de vélo ' +
+      'confortable et accessible. C’est la vitesse moyenne utilisée par ' +
+      '<a href="https://www150.statcan.gc.ca/n1/pub/18-001-x/18-001-x2024005-fra.htm" ' +
+      'target="_blank" rel="noopener">Statistique Canada</a> pour mesurer l’accès aux ' +
+      'services à vélo.</p>' +
+      '<p>Ensuite, le <strong>temps d’arrêt</strong>. La carte compte les feux de ' +
+      'circulation, les panneaux d’arrêt et les rues que chaque trajet croise, et prévoit ' +
+      'une attente à chacun. C’est pourquoi un trajet plus long sur un sentier polyvalent ' +
+      'peut être plus rapide qu’un trajet plus court qui coupe à travers des rues plus ' +
+      'passantes.</p>' +
+      '<p>Il s’agit d’estimations. La météo, le vent, l’achalandage des sentiers et ' +
+      'votre propre rythme feront varier le résultat.</p>',
     minutes: 'min',
     hours: 'h',
     pace: 'à un rythme détendu',
@@ -546,21 +646,25 @@ map.on('click', (e) => {
     selectRoute(p.id);
     return;
   }
-  const sectionLabel = {
-    carfree: t('sectionCarfree'), lane: t('sectionLane'), road: t('sectionRoad'),
-  }[p.safety] || '';
-  // One-way sections say so up front — it is the thing you need to know before
-  // the surface type.
   const dirLabel = { towork: t('dirTowork'), home: t('dirHome') }[p.dir];
-  const homeNote = p.distance_km_home ? ` · ${t('homeDistance')} ${p.distance_km_home} km` : '';
+  // A route can differ by direction in distance, in time, or in both.
+  const homeNote = (p.distance_km_home || p.minutes_home)
+    ? ` · ${t('homeDistance')} ${p.distance_km_home || p.distance_km} km`
+      + ` (~${formatDuration(p.minutes_home || p.minutes)})`
+    : '';
+  const stopNote = p.stop_minutes
+    ? `<br><span style="color:#6c757d">`
+      + t('stopNote').replace('{m}', p.stop_minutes).replace('{n}', p.signals)
+      + `</span>`
+    : '';
   new maplibregl.Popup({ closeButton: false, maxWidth: '260px' })
     .setLngLat(e.lngLat)
     .setHTML(
       `<strong>${p['name_' + lang]}</strong><br>` +
       `${p['desc_' + lang]}<br>` +
       (dirLabel ? `<strong>${dirLabel}</strong><br>` : '') +
-      `<em>${sectionLabel}</em><br>` +
-      `<span style="color:#6c757d">${p.distance_km} km · ~${formatDuration(p.minutes)} ${t('pace')} · ${p.carfree_pct} % ${t('carFree')}${homeNote}</span>`)
+      `<span style="color:#6c757d">${p.distance_km} km · ~${formatDuration(p.minutes)} ${t('pace')} · ${p.carfree_pct} % ${t('carFree')}${homeNote}</span>${stopNote}` +
+      `<br><button type="button" class="how-times-cue" data-how-times>${t('howTimesLink')}</button>`)
     .addTo(map);
 });
 map.on('mousemove', (e) => {
@@ -613,6 +717,20 @@ document.getElementById('showall').addEventListener('click', () => selectRoute(s
 
 document.getElementById('panel-toggle').addEventListener('click', () => {
   document.getElementById('panel').classList.toggle('open');
+});
+
+// "How ride times are estimated". One dialog, two ways in: the footer link and a
+// cue in the section popup. Delegated from the document because the popup cue is
+// created on the fly and the footer link is re-rendered on every language switch,
+// so neither element survives long enough to hold its own listener.
+const howTimes = document.getElementById('how-times');
+document.addEventListener('click', (e) => {
+  if (e.target.closest('#how-times .dlg-close')) {
+    howTimes.close();
+  } else if (e.target.closest('[data-how-times]')) {
+    e.preventDefault();
+    if (!howTimes.open) howTimes.showModal(); // showModal() throws if already open
+  }
 });
 </script>
 </body>
