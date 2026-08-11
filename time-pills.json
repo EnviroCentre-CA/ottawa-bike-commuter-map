@@ -1,0 +1,308 @@
+[
+ {
+  "route": "orleans-south",
+  "lon": -75.46509,
+  "lat": 45.45936,
+  "minutes": 105
+ },
+ {
+  "route": "orleans-south",
+  "lon": -75.47933,
+  "lat": 45.49125,
+  "minutes": 90
+ },
+ {
+  "route": "orleans-south",
+  "lon": -75.53418,
+  "lat": 45.48611,
+  "minutes": 75
+ },
+ {
+  "route": "orleans-south",
+  "lon": -75.57223,
+  "lat": 45.47058,
+  "minutes": 60
+ },
+ {
+  "route": "orleans-south",
+  "lon": -75.62539,
+  "lat": 45.46301,
+  "minutes": 45
+ },
+ {
+  "route": "orleans-south",
+  "lon": -75.65575,
+  "lat": 45.45994,
+  "minutes": 30
+ },
+ {
+  "route": "orleans-south",
+  "lon": -75.69116,
+  "lat": 45.44481,
+  "minutes": 15
+ },
+ {
+  "route": "orleans",
+  "lon": -75.52388,
+  "lat": 45.4831,
+  "minutes": 75
+ },
+ {
+  "route": "orleans",
+  "lon": -75.57223,
+  "lat": 45.47058,
+  "minutes": 60
+ },
+ {
+  "route": "orleans",
+  "lon": -75.62539,
+  "lat": 45.46301,
+  "minutes": 45
+ },
+ {
+  "route": "orleans",
+  "lon": -75.65575,
+  "lat": 45.45994,
+  "minutes": 30
+ },
+ {
+  "route": "orleans",
+  "lon": -75.69116,
+  "lat": 45.44481,
+  "minutes": 15
+ },
+ {
+  "route": "blackburn-hamlet",
+  "lon": -75.61428,
+  "lat": 45.41889,
+  "minutes": 30
+ },
+ {
+  "route": "blackburn-hamlet",
+  "lon": -75.64228,
+  "lat": 45.41908,
+  "minutes": 20
+ },
+ {
+  "route": "blackburn-hamlet",
+  "lon": -75.66967,
+  "lat": 45.41605,
+  "minutes": 10
+ },
+ {
+  "route": "stittsville",
+  "lon": -75.91175,
+  "lat": 45.26384,
+  "minutes": 105
+ },
+ {
+  "route": "stittsville",
+  "lon": -75.87031,
+  "lat": 45.29182,
+  "minutes": 90
+ },
+ {
+  "route": "stittsville",
+  "lon": -75.84634,
+  "lat": 45.31621,
+  "minutes": 75
+ },
+ {
+  "route": "stittsville",
+  "lon": -75.84081,
+  "lat": 45.33636,
+  "minutes": 60
+ },
+ {
+  "route": "stittsville",
+  "lon": -75.80114,
+  "lat": 45.36333,
+  "minutes": 45
+ },
+ {
+  "route": "stittsville",
+  "lon": -75.76405,
+  "lat": 45.38994,
+  "minutes": 30
+ },
+ {
+  "route": "stittsville",
+  "lon": -75.72906,
+  "lat": 45.41098,
+  "minutes": 15
+ },
+ {
+  "route": "kanata",
+  "lon": -75.88926,
+  "lat": 45.3266,
+  "minutes": 75
+ },
+ {
+  "route": "kanata",
+  "lon": -75.84315,
+  "lat": 45.34255,
+  "minutes": 60
+ },
+ {
+  "route": "kanata",
+  "lon": -75.80114,
+  "lat": 45.36333,
+  "minutes": 45
+ },
+ {
+  "route": "kanata",
+  "lon": -75.76405,
+  "lat": 45.38994,
+  "minutes": 30
+ },
+ {
+  "route": "kanata",
+  "lon": -75.73541,
+  "lat": 45.40323,
+  "minutes": 15
+ },
+ {
+  "route": "nepean",
+  "lon": -75.76464,
+  "lat": 45.34461,
+  "minutes": 60
+ },
+ {
+  "route": "nepean",
+  "lon": -75.75263,
+  "lat": 45.36742,
+  "minutes": 45
+ },
+ {
+  "route": "nepean",
+  "lon": -75.72285,
+  "lat": 45.38373,
+  "minutes": 30
+ },
+ {
+  "route": "nepean",
+  "lon": -75.68191,
+  "lat": 45.40397,
+  "minutes": 15
+ },
+ {
+  "route": "barrhaven",
+  "lon": -75.72509,
+  "lat": 45.28761,
+  "minutes": 75
+ },
+ {
+  "route": "barrhaven",
+  "lon": -75.74489,
+  "lat": 45.32257,
+  "minutes": 60
+ },
+ {
+  "route": "barrhaven",
+  "lon": -75.72725,
+  "lat": 45.34718,
+  "minutes": 45
+ },
+ {
+  "route": "barrhaven",
+  "lon": -75.71862,
+  "lat": 45.37504,
+  "minutes": 30
+ },
+ {
+  "route": "barrhaven",
+  "lon": -75.71298,
+  "lat": 45.4031,
+  "minutes": 15
+ },
+ {
+  "route": "findlay-creek",
+  "lon": -75.62881,
+  "lat": 45.31504,
+  "minutes": 60
+ },
+ {
+  "route": "findlay-creek",
+  "lon": -75.65057,
+  "lat": 45.3454,
+  "minutes": 45
+ },
+ {
+  "route": "findlay-creek",
+  "lon": -75.67981,
+  "lat": 45.37384,
+  "minutes": 30
+ },
+ {
+  "route": "findlay-creek",
+  "lon": -75.6786,
+  "lat": 45.39828,
+  "minutes": 15
+ },
+ {
+  "route": "south-keys",
+  "lon": -75.67981,
+  "lat": 45.37384,
+  "minutes": 30
+ },
+ {
+  "route": "south-keys",
+  "lon": -75.67463,
+  "lat": 45.38685,
+  "minutes": 20
+ },
+ {
+  "route": "south-keys",
+  "lon": -75.68197,
+  "lat": 45.40412,
+  "minutes": 10
+ },
+ {
+  "route": "alta-vista",
+  "lon": -75.62448,
+  "lat": 45.37313,
+  "minutes": 40
+ },
+ {
+  "route": "alta-vista",
+  "lon": -75.64185,
+  "lat": 45.39363,
+  "minutes": 30
+ },
+ {
+  "route": "alta-vista",
+  "lon": -75.66795,
+  "lat": 45.39407,
+  "minutes": 20
+ },
+ {
+  "route": "alta-vista",
+  "lon": -75.68197,
+  "lat": 45.40412,
+  "minutes": 10
+ },
+ {
+  "route": "vanier",
+  "lon": -75.57539,
+  "lat": 45.45305,
+  "minutes": 60
+ },
+ {
+  "route": "vanier",
+  "lon": -75.5999,
+  "lat": 45.4355,
+  "minutes": 45
+ },
+ {
+  "route": "vanier",
+  "lon": -75.62579,
+  "lat": 45.43188,
+  "minutes": 30
+ },
+ {
+  "route": "vanier",
+  "lon": -75.66041,
+  "lat": 45.43134,
+  "minutes": 15
+ }
+]

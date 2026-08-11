@@ -55,7 +55,10 @@ const CORRIDORS = [
     desc_fr: 'Vers le nord par Portobello et le chemin Trim, puis le sentier de la rivière des Outaouais vers l’ouest',
     color: '#800000',
     points: [
-      [-75.463397, 45.459442], // start, Nantes St (mid-block, east of Portobello)
+      [-75.463564, 45.454130], // Francois Dupuis rec renter
+      [-75.464442, 45.454202], // 
+      [-75.464572, 45.454675], //
+      [-75.464954, 45.454985], // 
       [-75.465025, 45.478363], // Portobello Blvd, north end
       [-75.477830, 45.489322], // Trim Rd, over Highway 174
       [-75.481182, 45.498095], // Trim Rd, north end at the river
@@ -78,7 +81,11 @@ const CORRIDORS = [
     desc_fr: 'Sentier de la rivière des Outaouais, le long de la promenade Sir-George-Étienne-Cartier',
     color: '#E6194B',
     points: [
-      [-75.52033, 45.48423], // Champlain St at Jeanne d'Arc
+      [-75.520218, 45.480506], // Oc transpo park and ride
+      [-75.521622, 45.480111], 
+      [-75.522045, 45.482078], 
+      [-75.524803, 45.483883], 
+      [-75.527174, 45.486779], 
       [-75.63173, 45.46078], // left at the split to avoid gravel path
       [-75.64002, 45.45753], // south of airport
       [-75.64901, 45.45812], // west of airport
@@ -88,15 +95,20 @@ const CORRIDORS = [
     ],
   },
   {
+    // NOTE: the id still reads blackburn-hamlet from when this corridor carried
+    // that name. The Blackburn Hamlet label now belongs to the `vanier` corridor
+    // below, so do not go by ids alone when editing these two.
     id: 'blackburn-hamlet',
-    name_en: 'Blackburn Hamlet',
-    name_fr: 'Blackburn Hamlet',
-    desc_en: 'From Blackburn Hamlet to downtown',
-    desc_fr: 'De Blackburn Hamlet jusqu’au centre-ville',
+    name_en: 'Pineview',
+    name_fr: 'Pineview',
+    desc_en: 'From Pineview to downtown',
+    desc_fr: 'De Pineview jusqu’au centre-ville',
     color: '#3CB44B',
     points: [
-      [-75.56650, 45.43093], // start
-      [-75.623446, 45.421630], // Cyrville Rd at Lavrie Ave — leave the diagonal pathway here
+      [-75.602784, 45.423789], // start beaverpond st
+      [-75.605302, 45.423079], // ridgebrook dr
+      [-75.608811, 45.419557], // meadowbrook road
+      [-75.623446, 45.421630], // Cyrville Rd at Labrie Ave — leave the diagonal pathway here
       [-75.622716, 45.419368], // Kenaston St, east end
       [-75.629164, 45.416648], // Kenaston St, west end
       [-75.633516, 45.419068], // multi-use pathway (keeps it off the intersection to the south)
@@ -113,7 +125,7 @@ const CORRIDORS = [
     desc_fr: 'Sentier transcanadien via Bells Corners, rejoignant le sentier du ruisseau Watts',
     color: '#911EB4',
     points: [[-75.9250, 45.2585], [-75.83670, 45.32471], DOWNTOWN],
-    
+
   },
   {
     id: 'kanata',
@@ -137,10 +149,16 @@ const CORRIDORS = [
     desc_fr: 'À travers Nepean jusqu’au centre-ville',
     color: '#9A6324',
     points: [
-      [-75.76896, 45.33831], // start
-      [-75.76486, 45.35831], // Iris
-      [-75.69895, 45.39787], // Madawaska
-      [-75.68704, 45.40186], // fifth
+      [-75.771341, 45.340162], // start
+      [-75.769684, 45.355720], // Iris
+      [-75.767022, 45.353536], // Iris saw creek pathway
+      [-75.763871, 45.352745], // left side of woodroofe
+      [-75.764005, 45.353094], // north left side of woodroofe
+      [-75.763464, 45.353210], // right side of woodroofe
+      [-75.706385, 45.396488], // dows lake
+      [-75.679566, 45.400944], // landsdowne
+      [-75.680868, 45.418411], // canal bend
+      [-75.689719, 45.422542], // laurier
       DOWNTOWN,
     ],
   },
@@ -172,7 +190,14 @@ const CORRIDORS = [
     desc_fr: 'De Findlay Creek jusqu’au centre-ville',
     color: '#000075',
     points: [
-      [-75.601977, 45.317435], // start at Dzifa's new house :) 
+      [-75.604132, 45.315828], // start Dragonfly Park
+      [-75.607717, 45.315648], // spartina st 
+      [-75.611031, 45.315014], // diamond jubilee park 
+      [-75.614645, 45.313090], // creekview way
+      [-75.616217, 45.312538], // creekview way further down
+      [-75.618419, 45.314016], // bunchberry way
+      [-75.619606, 45.313533], // cut through towards Albion
+      [-75.624703, 45.316483], // Quinn road 
       [-75.67400, 45.38201], // Sawmill Creek / canal corridor
       [-75.678811, 45.398451], // early left off Riverdale Ave onto Echo Dr
       [-75.680142, 45.418484], // canal pathway near downtown
@@ -187,22 +212,30 @@ const CORRIDORS = [
     desc_fr: 'Sentier du ruisseau Sawmill jusqu’au sentier est du canal Rideau',
     color: '#F032E6',
     points: [
-      [-75.6478, 45.3524], // start
+      [-75.663421, 45.354871], // start owl ark
+      [-75.658452, 45.353785], // juno beach bridge
       [-75.67400, 45.38201], // Sawmill Creek / canal corridor
       [-75.678811, 45.398451], // early left off Riverdale Ave onto Echo Dr
       DOWNTOWN,
     ],
   },
   {
+    // NOTE: the id still reads alta-vista from when the corridor started there.
+    // It now runs up from Greenboro via Conroy Rd, passing through Alta Vista.
     id: 'alta-vista',
-    name_en: 'Alta Vista',
-    name_fr: 'Alta Vista',
-    desc_en: 'From Alta Vista to downtown',
-    desc_fr: 'D’Alta Vista jusqu’au centre-ville',
-    color: '#bace0c',
+    name_en: 'Greenboro',
+    name_fr: 'Greenboro',
+    desc_en: 'From Greenboro up the Conroy Road pathway, then through Alta Vista to downtown',
+    desc_fr: 'De Greenboro par le sentier du chemin Conroy, puis à travers Alta Vista jusqu’au centre-ville',
+    color: '#fff200eb',
     points: [
-      [-75.627150, 45.394982], // start
-      [-75.648404, 45.395360], // Saunders Rd, before the turn west onto Billings Ave
+      [-75.629833, 45.363360], // start Bruff park
+      [-75.620919, 45.366827], // mup on the left side of Conroy rd
+      [-75.628727, 45.381330], // mup on the left side of Conroy rd near st laurent bl
+      [-75.630547, 45.383532], // left side of intersection walkley and conroy
+      [-75.630204, 45.383671], // right side of intersection walkley and conroy
+      [-75.630450, 45.383948], // on mup north of intersection walkley and conroy
+      [-75.643209, 45.396175], // Lynda Lane park
       [-75.668822, 45.394078], // Billings Ave, west end near John Murphy Park
       // Staircase north through the pathways east of Riverside Dr — four
       // via-points because each leg is short and the router otherwise cuts
@@ -214,11 +247,14 @@ const CORRIDORS = [
     ],
   },
   {
+    // NOTE: the id still reads vanier from when this corridor carried that name.
+    // It is now the Blackburn Hamlet / Gloucester route; the Pineview corridor
+    // above is the one whose id says blackburn-hamlet.
     id: 'vanier',
-    name_en: 'Vanier',
-    name_fr: 'Vanier',
-    desc_en: 'From Vanier to downtown',
-    desc_fr: 'De Vanier jusqu’au centre-ville',
+    name_en: 'Blackburn Hamlet / Gloucester',
+    name_fr: 'Blackburn Hamlet / Gloucester',
+    desc_en: 'From Blackburn Hamlet and Gloucester to downtown',
+    desc_fr: 'De Blackburn Hamlet et Gloucester jusqu’au centre-ville',
     color: '#3dcbff',
     // Vanier is ridden slightly differently each way, so it is defined as
     // segments rather than one `points` array (see "Directional segments").
@@ -228,10 +264,17 @@ const CORRIDORS = [
           // Start extended northeast from the former start at
           // -75.643666,45.434086; the route still passes within ~25 m of that
           // old point on the homeward leg below.
-          [-75.623926, 45.443348], // start
-          [-75.625204, 45.441279], // Den Haag Dr
-          [-75.631610, 45.438584], // Borealis Cres
-          [-75.633193, 45.436673], // cut-through path, exits onto La Cité Private
+          [-75.576289, 45.434491], // start
+          [-75.576351, 45.450995], // on trail
+          [-75.576693, 45.455552], // on trail further down
+          [-75.573675, 45.459104], // on trail further down
+          [-75.574299, 45.458574], // on trail further down
+          [-75.586066, 45.449460], // just south of montreal road
+          [-75.608481, 45.431738], // blair bike racks
+          [-75.609129, 45.431774], // under blair overhead bridge
+          [-75.617440, 45.428456], // city centre park
+          [-75.622781, 45.427815], // palmerston dr
+          [-75.632826, 45.436133], // cut through to la cite private
           SPLIT,
         ],
       },
@@ -402,9 +445,14 @@ const SLOW_BARRIERS = /^(gate|cycle_barrier|bollard|lift_gate|swing_gate|stile|k
 // it turned 21 real junctions into 49. Controls closer together than this are
 // treated as one junction, where a rider stops at most once.
 //
-// 30 m sits inside a stable plateau: 25 m and 40 m both give 21 junctions on
-// Vanier, and only at ~60 m do genuinely separate intersections start merging.
-const JUNCTION_RADIUS_M = 30;
+// 40 m, because downtown's multi-lane crossings are wider than the suburban ones
+// this was first tuned on: at 30 m the Orléans route still billed several single
+// intersections twice, as a `crossing=no` junction node plus a
+// `crossing=traffic_signals` node 40 m past it. 40 m stays inside the plateau
+// measured on Vanier (25 m and 40 m both give 21 there). Do not push much past
+// this — downtown blocks are about 100 m, so ~80 m starts merging genuinely
+// separate intersections.
+const JUNCTION_RADIUS_M = 40;
 
 function metersBetween(aLon, aLat, bLon, bLat) {
   const R = 6371000, rad = Math.PI / 180;
@@ -473,20 +521,25 @@ function estimateTiming(messages) {
 
   let cruiseSeconds = 0;
   const controls = [];
+  // Per-row trace, so the time-remaining pills can be placed on the same model
+  // that produces the headline figure rather than on a second estimate.
+  const steps = [];
   for (const row of messages.slice(1)) {
     const meters = Number(row[iDist]) || 0;
-    cruiseSeconds += meters / (cruiseKmh(parseWayTags(row[iWayTags])) * (1000 / 3600));
+    const rowCruise = meters / (cruiseKmh(parseWayTags(row[iWayTags])) * (1000 / 3600));
+    cruiseSeconds += rowCruise;
 
+    const lon = Number(row[iLon]) / 1e6;
+    const lat = Number(row[iLat]) / 1e6;
     const { seconds, kind } = nodeDelay(parseWayTags(row[iNodeTags]));
+    let controlIndex = null;
     if (kind) {
-      controls.push({
-        lon: Number(row[iLon]) / 1e6,
-        lat: Number(row[iLat]) / 1e6,
-        seconds, kind,
-      });
+      controlIndex = controls.length;
+      controls.push({ lon, lat, seconds, kind });
     }
+    steps.push({ lon, lat, cruiseSeconds: rowCruise, controlIndex });
   }
-  return { cruiseSeconds, controls };
+  return { cruiseSeconds, controls, steps };
 }
 
 /**
@@ -497,26 +550,95 @@ function estimateTiming(messages) {
  */
 function summarizeControls(controls) {
   const out = { delaySeconds: 0, signals: 0, stopSigns: 0, crossings: 0, barriers: 0 };
+  // Which entry in `controls` each surviving junction was charged at, and for how
+  // long. Lets the pill walk put the delay at the place it is actually incurred.
+  const charged = new Map();
   let cluster = null;
   const flush = () => {
     if (!cluster) return;
     out.delaySeconds += cluster.seconds;
     out[cluster.kind]++;
+    charged.set(cluster.firstIndex, cluster.seconds);
     cluster = null;
   };
 
-  for (const c of controls) {
+  controls.forEach((c, i) => {
     if (cluster && metersBetween(cluster.lon, cluster.lat, c.lon, c.lat) <= JUNCTION_RADIUS_M) {
       if (c.seconds > cluster.seconds) { cluster.seconds = c.seconds; cluster.kind = c.kind; }
       // Chain from the newest node, so a wide junction stays one cluster.
       cluster.lon = c.lon; cluster.lat = c.lat;
     } else {
       flush();
-      cluster = { ...c };
+      cluster = { ...c, firstIndex: i };
     }
-  }
+  });
   flush();
-  return out;
+  return { ...out, charged };
+}
+
+// ---------------------------------------------------------------------------
+// Time-remaining pills
+// ---------------------------------------------------------------------------
+// Markers along a route saying how long is left to downtown. Distance markers
+// would be the conventional choice, but "35 min to go" is the number someone new
+// to bike commuting can act on, and it also stops a long corridor reading as
+// hopeless: the headline figure is the whole line end to end, while most riders
+// join partway along.
+//
+// Quarter-hour steps, because that is how people already think about a commute.
+// Routes of 50 minutes or less drop to 10-minute steps so they still get four or
+// so markers: at 15 minutes a 42-minute corridor showed only two, which is thin
+// signposting over 11 km.
+//
+// A step MUST be a whole number of minutes and a multiple of 5. Pills are round
+// signposts, not readings: "1 hr 22 min left" would claim a precision the
+// estimate does not have. Enforced in timePills() below.
+const PILL_STEP_MINUTES = totalSeconds => (totalSeconds <= 50 * 60 ? 10 : 15);
+
+/**
+ * Positions where the remaining ride time crosses each step boundary, walking
+ * the same cruise + de-duplicated delay model as the headline estimate — so a
+ * pill and the route's stated time can never disagree.
+ *
+ * `segs` must be one direction's segments in travel order.
+ */
+function timePills(segs) {
+  const charged = summarizeControls(segs.flatMap(s => s.timing.controls)).charged;
+
+  const timeline = [];
+  let elapsed = 0;
+  let controlOffset = 0; // controls were concatenated, so indexes shift per segment
+  for (const s of segs) {
+    for (const step of s.timing.steps) {
+      elapsed += step.cruiseSeconds;
+      if (step.controlIndex !== null) {
+        elapsed += charged.get(controlOffset + step.controlIndex) || 0;
+      }
+      timeline.push({ lon: step.lon, lat: step.lat, elapsed });
+    }
+    controlOffset += s.timing.controls.length;
+  }
+
+  const total = elapsed;
+  const step = PILL_STEP_MINUTES(total);
+  if (!Number.isInteger(step) || step % 5 !== 0) {
+    console.error(`\nPILL_STEP_MINUTES gave ${step}: it must be a whole multiple of 5.`);
+    process.exit(1);
+  }
+  const pills = [];
+  // Start one step below the total so there is never a pill sitting on the start
+  // point, then walk forward once per boundary.
+  const firstMinutes = Math.floor((total / 60 - 1) / step) * step;
+  for (let m = firstMinutes; m >= step; m -= step) {
+    const hit = timeline.find(x => total - x.elapsed <= m * 60);
+    if (!hit) continue;
+    pills.push({
+      lon: Math.round(hit.lon * 1e5) / 1e5,
+      lat: Math.round(hit.lat * 1e5) / 1e5,
+      minutes: m,
+    });
+  }
+  return pills;
 }
 
 // ---------------------------------------------------------------------------
@@ -581,6 +703,9 @@ function splitBySafety(coordinates, messages) {
 
 const root = path.resolve(import.meta.dirname, '..');
 const features = [];
+// Time-remaining markers ride in their own file rather than in routes.geojson,
+// because every consumer of that file assumes each feature is a LineString.
+const pills = [];
 
 /**
  * One BRouter request, retried on failure. The public instance sheds load with
@@ -672,6 +797,13 @@ for (const c of CORRIDORS) {
     .reduce((sum, s) => sum + s.meters, 0);
   const carfreePct = Math.round((carFreeMeters / outboundMeters) * 100);
 
+  // Every corridor gets pills, and they follow the outbound direction: the figure
+  // they show is time left to downtown, which is how the whole map is framed. On
+  // a route with a homeward branch the branch itself carries none, since "time to
+  // downtown" is not what a rider on it is asking.
+  const routePills = timePills(forDir('towork'));
+  for (const pill of routePills) pills.push({ route: c.id, ...pill });
+
   let count = 0;
   for (const segment of built) {
     for (const s of segment.stretches) {
@@ -713,12 +845,19 @@ for (const c of CORRIDORS) {
   const twoWay = kmHome !== km || minutesHome !== minutes
     ? `, home ${kmHome} km/${minutesHome} min` : '';
   const kmh = (outboundMeters / 1000) / (outboundTiming.seconds / 3600);
+  const pillStep = PILL_STEP_MINUTES(outboundTiming.seconds);
   console.log(`${km} km (~${minutes} min, ${kmh.toFixed(1)} km/h; ${stopMinutes} min stopped at ` +
     `${outboundTiming.signals} lights + ${outboundTiming.stopSigns} stops)${twoWay}, ` +
-    `${count} stretches, ${carfreePct}% car-free`);
+    `${count} stretches, ${carfreePct}% car-free, ` +
+    `${routePills.length} pills every ${pillStep} min`);
   await new Promise(r => setTimeout(r, 1500)); // be polite to the public server
 }
 
 const out = { type: 'FeatureCollection', features };
 fs.writeFileSync(path.join(root, 'routes.geojson'), JSON.stringify(out));
 console.log(`Wrote routes.geojson (${features.length} features, ${CORRIDORS.length} routes)`);
+
+fs.writeFileSync(path.join(root, 'time-pills.json'), JSON.stringify(pills, null, 1));
+const pillRoutes = [...new Set(pills.map(p => p.route))];
+console.log(`Wrote time-pills.json (${pills.length} markers on ${pillRoutes.length} route(s): `
+  + `${pillRoutes.join(', ') || 'none'})`);

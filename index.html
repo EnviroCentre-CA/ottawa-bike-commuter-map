@@ -198,6 +198,16 @@
     font-family: Mulish, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
   }
   .maplibregl-popup-content { color: var(--ink); }
+  /* Route facts as a list rather than a run-on line joined by separators.
+     padding-left is set explicitly because the browser default (40px) is far too
+     deep for a 270px popup; the `* { margin: 0 }` reset handles the rest. */
+  .maplibregl-popup-content .pop-stats {
+    margin-top: 7px;
+    padding-left: 15px;
+    font-size: 12px; color: var(--muted);
+  }
+  .maplibregl-popup-content .pop-stats li { padding: 1.5px 0; }
+  .maplibregl-popup-content .pop-desc { margin-top: 2px; }
   /* Photo bubbles — round thumbnails pinned along a selected route */
   .photo-bubble {
     width: 48px; height: 48px;
@@ -210,6 +220,19 @@
     padding: 0;
   }
   .photo-bubble:hover { border-color: var(--teal-bright); }
+  /* Time-remaining markers along a selected route. White so they stay readable
+     over any route colour, with the route's own colour as the border. */
+  .time-pill {
+    padding: 2px 7px;
+    border-radius: 11px;
+    border: 2px solid var(--chrome);
+    background: #fff;
+    font: 700 11.5px/1.35 Mulish, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color: var(--chrome);
+    white-space: nowrap;
+    box-shadow: 0 1px 4px rgba(0,0,0,.3);
+    pointer-events: none; /* never block a click meant for the route line */
+  }
   .photo-popup-img { display: block; width: 100%; border-radius: 6px; }
   .photo-popup-caption { font-size: 12px; color: #555; margin-top: 6px; }
   #panel-toggle { display: none; }
@@ -299,8 +322,9 @@ const I18N = {
     sectionRoad: 'Section shared with car traffic',
     dirTowork: 'Ride this way to work (heading downtown)',
     dirHome: 'Ride this way home (leaving downtown)',
-    homeDistance: 'the ride home is',
-    stopNote: 'Includes about {m} min stopped, at {n} sets of traffic lights.',
+    homeDistance: 'The ride home is',
+    stopNote: 'Includes about {m} min stopped at traffic lights.',
+    pillAria: '{t} left to downtown',
     close: 'Close',
     howTimesLink: 'How ride times are estimated',
     howTimesTitle: 'How ride times are estimated',
@@ -347,8 +371,9 @@ const I18N = {
     sectionRoad: 'Section partagée avec les voitures',
     dirTowork: 'À suivre à l’aller au travail (vers le centre-ville)',
     dirHome: 'À suivre au retour à la maison (depuis le centre-ville)',
-    homeDistance: 'le retour fait',
-    stopNote: 'Comprend environ {m} min d’arrêt, à {n} feux de circulation.',
+    homeDistance: 'Le retour fait',
+    stopNote: 'Comprend environ {m} min d’arrêt aux feux de circulation.',
+    pillAria: '{t} avant le centre-ville',
     close: 'Fermer',
     howTimesLink: 'Comment les durées sont estimées',
     howTimesTitle: 'Comment les durées de trajet sont estimées',
@@ -409,6 +434,12 @@ function applyI18n() {
   document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = t(el.dataset.i18nHtml); });
   document.getElementById('lang-toggle').textContent = t('langButton');
   renderRouteList();
+  // Pill labels are formatted at render time, so they need rebuilding on a
+  // language switch. Safe on the first call, before any style has loaded:
+  // nothing is selected yet, so updateTimePills returns immediately. Do not
+  // guard this with map.getLayer() — that throws until the style arrives, and
+  // applyI18n runs before setMapStyle in boot().
+  updateTimePills();
 }
 
 // ---------------------------------------------------------------------------
@@ -545,6 +576,7 @@ function applySelection() {
   document.getElementById('safety-note').classList.toggle('visible', !!selectedId);
   document.getElementById('oneway-note').classList.toggle('visible', hasDirections(selectedId));
   updatePhotoBubbles();
+  updateTimePills();
 }
 
 // Photo bubbles — small round thumbnails showing what the infrastructure
@@ -557,6 +589,7 @@ const SHOW_PHOTOS = false;
 
 let photosData = [];
 let photoMarkers = [];
+let pillsData = [];
 
 function updatePhotoBubbles() {
   photoMarkers.forEach(m => m.remove());
@@ -579,6 +612,25 @@ function updatePhotoBubbles() {
     });
     photoMarkers.push(
       new maplibregl.Marker({ element: el }).setLngLat([ph.lon, ph.lat]).addTo(map));
+  }
+}
+
+// Time-remaining pills — "35 min" markers along the selected route, counting
+// down to downtown. Only the selected route shows them; eleven routes' worth at
+// once would be unreadable.
+let pillMarkers = [];
+
+function updateTimePills() {
+  pillMarkers.forEach(m => m.remove());
+  pillMarkers = [];
+  if (!selectedId || !pillsData.length) return;
+  for (const pill of pillsData.filter(p => p.route === selectedId)) {
+    const el = document.createElement('div');
+    el.className = 'time-pill';
+    el.textContent = formatDuration(pill.minutes);
+    el.setAttribute('aria-label', t('pillAria').replace('{t}', formatDuration(pill.minutes)));
+    pillMarkers.push(
+      new maplibregl.Marker({ element: el }).setLngLat([pill.lon, pill.lat]).addTo(map));
   }
 }
 
@@ -647,24 +699,30 @@ map.on('click', (e) => {
     return;
   }
   const dirLabel = { towork: t('dirTowork'), home: t('dirHome') }[p.dir];
-  // A route can differ by direction in distance, in time, or in both.
-  const homeNote = (p.distance_km_home || p.minutes_home)
-    ? ` · ${t('homeDistance')} ${p.distance_km_home || p.distance_km} km`
-      + ` (~${formatDuration(p.minutes_home || p.minutes)})`
-    : '';
-  const stopNote = p.stop_minutes
-    ? `<br><span style="color:#6c757d">`
-      + t('stopNote').replace('{m}', p.stop_minutes).replace('{n}', p.signals)
-      + `</span>`
-    : '';
-  new maplibregl.Popup({ closeButton: false, maxWidth: '260px' })
+  // One bullet per fact. Distance, time and car-free share always apply; the
+  // other two exist only on routes that differ by direction, or that stop at all.
+  // Note the non-breaking space before the % below, so the figure cannot wrap.
+  const stats = [
+    `${p.distance_km} km`,
+    `~${formatDuration(p.minutes)} ${t('pace')}`,
+    `${p.carfree_pct} % ${t('carFree')}`,
+  ];
+  if (p.distance_km_home || p.minutes_home) {
+    stats.push(`${t('homeDistance')} ${p.distance_km_home || p.distance_km} km`
+      + ` (~${formatDuration(p.minutes_home || p.minutes)})`);
+  }
+  // The junction count stays out of the copy on purpose: it is an over-count by
+  // construction (see "Ride time estimates" in README.md), so printing a precise
+  // figure invites a reader to check it and find it wrong.
+  if (p.stop_minutes) stats.push(t('stopNote').replace('{m}', p.stop_minutes));
+  new maplibregl.Popup({ closeButton: false, maxWidth: '270px' })
     .setLngLat(e.lngLat)
     .setHTML(
-      `<strong>${p['name_' + lang]}</strong><br>` +
-      `${p['desc_' + lang]}<br>` +
-      (dirLabel ? `<strong>${dirLabel}</strong><br>` : '') +
-      `<span style="color:#6c757d">${p.distance_km} km · ~${formatDuration(p.minutes)} ${t('pace')} · ${p.carfree_pct} % ${t('carFree')}${homeNote}</span>${stopNote}` +
-      `<br><button type="button" class="how-times-cue" data-how-times>${t('howTimesLink')}</button>`)
+      `<strong>${p['name_' + lang]}</strong>` +
+      `<div class="pop-desc">${p['desc_' + lang]}</div>` +
+      (dirLabel ? `<div class="pop-desc"><strong>${dirLabel}</strong></div>` : '') +
+      `<ul class="pop-stats">${stats.map(s => `<li>${s}</li>`).join('')}</ul>` +
+      `<button type="button" class="how-times-cue" data-how-times>${t('howTimesLink')}</button>`)
     .addTo(map);
 });
 map.on('mousemove', (e) => {
@@ -693,6 +751,8 @@ window._map = map; // debugging hook
   photosData = SHOW_PHOTOS
     ? await fetch('photos.json').then(r => r.ok ? r.json() : []).catch(() => [])
     : [];
+  // Optional: a route without pills simply shows none.
+  pillsData = await fetch('time-pills.json').then(r => r.ok ? r.json() : []).catch(() => []);
   renderRouteList();
   await setMapStyle();
   map.fitBounds(allBounds(), { padding: 60, duration: 0 });
