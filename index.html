@@ -79,6 +79,32 @@
   }
   header button:hover { background: rgba(255,255,255,.14); }
   header button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  /* Off-screen until focused, then parks over the header. No transition: it
+     would be motion for its own sake on a control only keyboard users see. */
+  .skip-link {
+    position: absolute; z-index: 20;
+    left: 8px; top: -100px;
+    padding: 9px 15px;
+    background: var(--card); color: var(--brand);
+    font-weight: 700; font-size: 13px; text-decoration: none;
+    border: 2px solid var(--brand); border-radius: 3px;
+  }
+  .skip-link:focus { top: 8px; }
+  /* Focused programmatically by the skip link, so it needs no ring of its own. */
+  #route-list:focus { outline: none; }
+  /* Everything outside the header fell back to the browser's default ring, which
+     is thin and low-contrast on the white panel. 3px with an offset so keyboard
+     focus cannot be mistaken for the 2px brand outline .route.active already
+     uses to mark the selected route. */
+  .route:focus-visible, #showall:focus-visible, #panel-toggle:focus-visible,
+  .photo-bubble:focus-visible,
+  .maplibregl-popup-content .how-times-cue:focus-visible {
+    outline: 3px solid var(--brand); outline-offset: 2px;
+  }
+  /* Controls that sit on the navy chrome need a light ring instead. */
+  #how-times .dlg-close:focus-visible, footer .how-times-cue:focus-visible {
+    outline: 2px solid #fff; outline-offset: 2px;
+  }
   header button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
   #wrap { position: relative; flex: 1; min-height: 0; }
   #map { position: absolute; inset: 0; }
@@ -108,8 +134,25 @@
   }
   .route:hover { background: var(--paper); }
   .route.active { background: var(--paper); outline: 2px solid var(--brand); }
-  .route .chip { flex: 0 0 22px; height: 6px; border-radius: 3px; }
+  /* Ring for the same reason the map lines get a casing: the paler route
+     colours (yellow, light blue) all but vanish against the white panel. */
+  .route .chip {
+    flex: 0 0 22px; height: 6px; border-radius: 3px;
+    box-shadow: 0 0 0 1px rgba(7,21,70,.4);
+  }
   .route .meta { font-size: 12px; color: var(--muted); }
+  /* Detail for the selected route. Indented past the chip so it reads as
+     belonging to the route above it rather than as a new list entry. */
+  .route-detail {
+    padding: 1px 8px 9px 40px;
+    font-size: 12.5px; line-height: 1.5; color: var(--muted);
+  }
+  .route-detail .route-desc { color: var(--ink); }
+  .route-detail .route-facts { margin: 6px 0 0; padding-left: 15px; }
+  .route-detail .route-facts li { margin-top: 3px; }
+  .route-detail .how-times-cue {
+    margin-top: 8px; font-size: 11.5px; font-weight: 600; color: var(--brand);
+  }
   #showall {
     margin-top: 8px; width: 100%;
     font: inherit; font-size: 13px;
@@ -125,11 +168,15 @@
   .legend { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border); }
   .legend div { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--muted); padding: 3px 0; }
   .legend .swatch { flex: 0 0 22px; height: 0; }
-  /* Swatches must match the colours actually drawn on the map (the base
-     map's cycling network is teal), not the site's brand palette. */
+  /* Swatches take the hues actually drawn on the map (the base map's cycling
+     network is teal), not the site's brand palette — but at full strength.
+     The network stays dimmed to MUTE_OPACITY on the map, where it is context
+     behind the commuter routes; a legend entry is a key symbol rather than a
+     screened sample of one, and has to clear 3:1 by itself (WCAG 1.4.11).
+     At the previous opacity .55 the on-street lane swatch managed 2.05:1. */
   .swatch.oasis { border-top: 3px solid #006458; }
   .swatch.shared { border-top: 3px dashed #006458; }
-  .swatch.lane { border-top: 3px solid #3a8878; opacity: .55; }
+  .swatch.lane { border-top: 3px solid #3a8878; }
   /* Stands in for the map's chevron; height 0 on .swatch would hide the glyph. */
   .swatch.arrow {
     height: auto; text-align: center; line-height: 1;
@@ -241,7 +288,10 @@
     header h1 { font-size: 16px; }
     header .tagline { display: none; }
     #panel { width: min(300px, calc(100% - 24px)); display: none; }
-    #panel.open { display: block; }
+    /* Once open, the toggle floats at bottom:24px over the panel — it covered
+       the last two routes, and a focused route button could sit behind it.
+       End the panel above the button instead so they never overlap. */
+    #panel.open { display: block; max-height: calc(100% - 92px); }
     #panel-toggle {
       display: block;
       position: absolute; top: 12px; left: 12px; z-index: 6;
@@ -257,6 +307,9 @@
 </style>
 </head>
 <body>
+<!-- The map canvas and its four controls sit ahead of the route list in tab
+     order, so reaching the list unaided took nine presses. -->
+<a class="skip-link" href="#route-list" data-i18n="skipToRoutes"></a>
 <header>
   <img class="logo" src="assets/ottawa-logo-white.svg" alt="City of Ottawa / Ville d’Ottawa">
   <div class="titles">
@@ -269,11 +322,13 @@
   </div>
 </header>
 
-<div id="wrap">
+<main id="wrap">
   <div id="map"></div>
   <div id="panel">
     <h2 data-i18n="routesHeading"></h2>
-    <div id="route-list"></div>
+    <!-- tabindex allows the skip link to land here; the next Tab reaches the
+         first route button, which carries its own focus ring. -->
+    <div id="route-list" tabindex="-1"></div>
     <button id="showall" data-i18n="showAll"></button>
     <p id="safety-note" data-i18n-html="safetyNote"></p>
     <p id="oneway-note" data-i18n-html="onewayNote"></p>
@@ -285,8 +340,8 @@
       <div><span class="swatch arrow">›</span><span data-i18n="legendOneway"></span></div>
     </div>
   </div>
-  <button id="panel-toggle" data-i18n="routesHeading"></button>
-</div>
+  <button id="panel-toggle" data-i18n="routesHeading" aria-controls="panel" aria-expanded="false"></button>
+</main>
 
 <footer>
   <span data-i18n-html="credits"></span> ·
@@ -308,6 +363,7 @@ const I18N = {
     title: 'Bike Commute Routes',
     tagline: 'Safe and comfortable bike routes from the suburbs to downtown Ottawa',
     routesHeading: 'Commuter routes',
+    skipToRoutes: 'Skip to route list',
     legendHeading: 'On the map',
     legendOasis: 'Protected bike lane or multi-use-pathway (car-free)',
     legendShared: 'Pedestrian priority pathway (car-free)',
@@ -347,6 +403,8 @@ const I18N = {
     hours: 'hr',
     pace: 'at a relaxed pace',
     langButton: 'FR',
+    // "FR" alone gives a screen reader no idea what the button does.
+    langButtonAria: 'Switch to French',
     highContrast: 'High contrast',
     credits: 'A <strong>Cycling Safety Awareness Program</strong> resource by <a href="https://envirocentre.ca/">Envirocentre</a>. ' +
       'Map style adapted from <a href="https://github.com/eljojo/bike-app-astro">whereto.bike</a> (AGPL-3.0) · ' +
@@ -357,6 +415,7 @@ const I18N = {
     title: 'Trajets domicile-travail à vélo',
     tagline: 'Des trajets à vélo sûrs et confortables, des banlieues au centre-ville d’Ottawa',
     routesHeading: 'Trajets domicile-travail',
+    skipToRoutes: 'Aller à la liste des trajets',
     legendHeading: 'Sur la carte',
     legendOasis: 'Piste cyclable protégée ou sentier polyvalent (sans voitures)',
     legendShared: 'Sentier à priorité piétonne (sans voitures)',
@@ -397,6 +456,7 @@ const I18N = {
     hours: 'h',
     pace: 'à un rythme détendu',
     langButton: 'EN',
+    langButtonAria: 'Passer en anglais',
     highContrast: 'Contraste élevé',
     credits: 'Une ressource du <strong>Programme de sensibilisation à la sécurité en vélo</strong> d’<a href="https://envirocentre.ca/">Envirocentre</a>. ' +
       'Style de carte adapté de <a href="https://github.com/eljojo/bike-app-astro">whereto.bike</a> (AGPL-3.0) · ' +
@@ -432,7 +492,9 @@ function applyI18n() {
   document.documentElement.lang = lang;
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
   document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = t(el.dataset.i18nHtml); });
-  document.getElementById('lang-toggle').textContent = t('langButton');
+  const langBtn = document.getElementById('lang-toggle');
+  langBtn.textContent = t('langButton');
+  langBtn.setAttribute('aria-label', t('langButtonAria'));
   renderRouteList();
   // Pill labels are formatted at render time, so they need rebuilding on a
   // language switch. Safe on the first call, before any style has loaded:
@@ -626,8 +688,13 @@ function applySelection() {
   map.setPaintProperty('commuter-arrows', 'icon-opacity', selectedId
     ? ['case', ['==', ['get', 'id'], selectedId], 1, 0.15]
     : 1);
-  document.querySelectorAll('.route').forEach(el =>
-    el.classList.toggle('active', el.dataset.id === selectedId));
+  document.querySelectorAll('.route').forEach(el => {
+    const on = el.dataset.id === selectedId;
+    el.classList.toggle('active', on);
+    el.setAttribute('aria-expanded', String(on));
+    const detail = document.getElementById('detail-' + el.dataset.id);
+    if (detail) detail.hidden = !on;
+  });
   document.getElementById('showall').classList.toggle('visible', !!selectedId);
   document.getElementById('safety-note').classList.toggle('visible', !!selectedId);
   document.getElementById('oneway-note').classList.toggle('visible', hasDirections(selectedId));
@@ -659,7 +726,7 @@ function updatePhotoBubbles() {
     el.setAttribute('aria-label', ph['caption_' + lang] || 'Photo');
     el.addEventListener('click', (e) => {
       e.stopPropagation();
-      new maplibregl.Popup({ closeButton: false, maxWidth: '300px' })
+      new maplibregl.Popup({ closeButton: true, maxWidth: '300px' })
         .setLngLat([ph.lon, ph.lat])
         .setHTML(
           `<img class="photo-popup-img" src="${ph.src}" alt="">` +
@@ -731,15 +798,47 @@ function renderRouteList() {
     a['name_' + lang].localeCompare(b['name_' + lang], lang, { sensitivity: 'base' }));
 
   for (const p of routes) {
+    const item = document.createElement('div');
+    item.className = 'route-item';
+
     const btn = document.createElement('button');
     btn.className = 'route' + (p.id === selectedId ? ' active' : '');
     btn.dataset.id = p.id;
+    btn.setAttribute('aria-controls', 'detail-' + p.id);
+    btn.setAttribute('aria-expanded', String(p.id === selectedId));
     btn.innerHTML =
       `<span class="chip" style="background:${p.color}"></span>` +
       `<span><strong>${p['name_' + lang]}</strong><br>` +
       `<span class="meta">${p.distance_km} km · ~${formatDuration(p.minutes)} · ${p.carfree_pct} % ${t('carFree')}</span></span>`;
     btn.addEventListener('click', () => selectRoute(p.id));
-    list.appendChild(btn);
+
+    // The description and the two conditional notes used to exist only inside a
+    // popup opened by clicking the map, which no keyboard user could reach.
+    // They live here instead: built for every route, revealed with `hidden`
+    // when its route is selected. Toggling beats re-rendering — rebuilding the
+    // list would drop keyboard focus back to <body> mid-use.
+    const detail = document.createElement('div');
+    detail.className = 'route-detail';
+    detail.id = 'detail-' + p.id;
+    detail.hidden = p.id !== selectedId;
+    // Distance, time and car-free share are already on the button above, so the
+    // detail carries only what the button cannot. Both facts are optional — at
+    // present a single route differs by direction on the ride home.
+    const facts = [];
+    if (p.distance_km_home || p.minutes_home) {
+      facts.push(`${t('homeDistance')} ${p.distance_km_home || p.distance_km} km`
+        + ` (~${formatDuration(p.minutes_home || p.minutes)})`);
+    }
+    if (p.stop_minutes) facts.push(t('stopNote').replace('{m}', p.stop_minutes));
+    detail.innerHTML =
+      `<p class="route-desc">${p['desc_' + lang]}</p>` +
+      (facts.length
+        ? `<ul class="route-facts">${facts.map(f => `<li>${f}</li>`).join('')}</ul>`
+        : '') +
+      `<button type="button" class="how-times-cue" data-how-times>${t('howTimesLink')}</button>`;
+
+    item.append(btn, detail);
+    list.appendChild(item);
   }
 }
 
@@ -771,7 +870,9 @@ map.on('click', (e) => {
   // construction (see "Ride time estimates" in README.md), so printing a precise
   // figure invites a reader to check it and find it wrong.
   if (p.stop_minutes) stats.push(t('stopNote').replace('{m}', p.stop_minutes));
-  new maplibregl.Popup({ closeButton: false, maxWidth: '270px' })
+  // closeButton so the popup can be dismissed deliberately rather than only by
+  // clicking somewhere else on the map.
+  new maplibregl.Popup({ closeButton: true, maxWidth: '270px' })
     .setLngLat(e.lngLat)
     .setHTML(
       `<strong>${p['name_' + lang]}</strong>` +
@@ -833,8 +934,27 @@ hcBtn.addEventListener('click', async () => {
 
 document.getElementById('showall').addEventListener('click', () => selectRoute(selectedId));
 
-document.getElementById('panel-toggle').addEventListener('click', () => {
-  document.getElementById('panel').classList.toggle('open');
+const panelToggle = document.getElementById('panel-toggle');
+
+// Below 700px the panel is a closed disclosure (display:none), so the skip
+// link has to open it before focusing — otherwise the target is not rendered
+// and focus goes nowhere. Handled here rather than left to the href so the
+// open-then-focus order is deterministic.
+document.querySelector('.skip-link').addEventListener('click', (e) => {
+  e.preventDefault();
+  const panel = document.getElementById('panel');
+  if (getComputedStyle(panel).display === 'none') {
+    panel.classList.add('open');
+    panelToggle.setAttribute('aria-expanded', 'true');
+  }
+  document.getElementById('route-list').focus();
+});
+
+panelToggle.addEventListener('click', () => {
+  // The panel is a narrow-screen disclosure, so its open state has to be
+  // announced, not just styled.
+  const open = document.getElementById('panel').classList.toggle('open');
+  panelToggle.setAttribute('aria-expanded', String(open));
 });
 
 // "How ride times are estimated". One dialog, two ways in: the footer link and a
