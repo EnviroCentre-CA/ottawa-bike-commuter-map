@@ -485,13 +485,69 @@ function addArrowImage() {
   map.addImage('dir-arrow', g.getImageData(0, 0, S, S));
 }
 
+// ---------------------------------------------------------------------------
+// Casing colour
+// ---------------------------------------------------------------------------
+// The casing is the colour immediately adjacent to a route line, so it — not
+// the base map — is what WCAG 1.4.11 measures the line's 3:1 minimum against.
+// The palette is picked so eleven routes stay tellable apart, which leaves some
+// colours (yellow, light blue) far too close to white: on the old fixed white
+// casing, Greenboro managed 1.16:1. No single casing colour fixes that, because
+// the palette runs from near-black navy to near-white yellow. So choose per
+// route instead — white behind dark colours, navy behind pale ones.
+//
+// Derived from `color` at load time rather than baked into routes.geojson, so
+// changing a route colour in fetch-routes.mjs needs no regeneration.
+const CASING_DARK = '#071546'; // navy, goes behind pale route colours
+const CASING_LIGHT = '#ffffff';
+const MAP_EARTH = [245, 243, 239]; // style background #f5f3ef
+
+function parseHex(hex) {
+  const h = hex.replace('#', '');
+  return [
+    parseInt(h.slice(0, 2), 16),
+    parseInt(h.slice(2, 4), 16),
+    parseInt(h.slice(4, 6), 16),
+    // Route colours may carry an alpha suffix, e.g. #fff200eb.
+    h.length === 8 ? parseInt(h.slice(6, 8), 16) / 255 : 1,
+  ];
+}
+
+function over(fg, bg) {
+  return [0, 1, 2].map(i => fg[i] * fg[3] + bg[i] * (1 - fg[3]));
+}
+
+function luminance(rgb) {
+  const [r, g, b] = rgb.map(c => {
+    c /= 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrast(a, b) {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/** Whichever of the two casings the route line stands out against more. */
+function casingFor(color) {
+  const line = parseHex(color);
+  return [CASING_LIGHT, CASING_DARK]
+    .map(c => {
+      const casing = over(parseHex(c), MAP_EARTH);
+      return { c, ratio: contrast(over(line, casing), casing) };
+    })
+    .sort((a, b) => b.ratio - a.ratio)[0].c;
+}
+
 function overlayLayers() {
   return [
     {
       id: 'commuter-casing',
       type: 'line', source: 'commuter',
       layout: { 'line-cap': 'round', 'line-join': 'round' },
-      paint: { 'line-color': '#ffffff', 'line-width': 8, 'line-opacity': 0.85 },
+      paint: { 'line-color': ['get', 'casing'], 'line-width': 8, 'line-opacity': 0.85 },
     },
     {
       id: 'commuter-line',
@@ -748,6 +804,8 @@ window._map = map; // debugging hook
 (async function boot() {
   applyI18n();
   routesData = await fetch('routes.geojson').then(r => r.json());
+  // See casingFor(): the casing colour is per route, not fixed white.
+  for (const f of routesData.features) f.properties.casing = casingFor(f.properties.color);
   photosData = SHOW_PHOTOS
     ? await fetch('photos.json').then(r => r.ok ? r.json() : []).catch(() => [])
     : [];
