@@ -101,8 +101,8 @@ const CORRIDORS = [
     id: 'blackburn-hamlet',
     name_en: 'Pineview',
     name_fr: 'Pineview',
-    desc_en: 'From Pineview to downtown',
-    desc_fr: 'De Pineview jusqu’au centre-ville',
+    desc_en: 'West on Meadowbrook Road and Cyrville Road, then Kenaston Street to the Hurdman pathway',
+    desc_fr: 'Vers l’ouest par le chemin Meadowbrook et le chemin Cyrville, puis la rue Kenaston jusqu’au sentier de Hurdman',
     color: '#3CB44B',
     points: [
       [-75.602784, 45.423789], // start beaverpond st
@@ -145,8 +145,8 @@ const CORRIDORS = [
     id: 'nepean',
     name_en: 'Nepean',
     name_fr: 'Nepean',
-    desc_en: 'Through Nepean to downtown',
-    desc_fr: 'À travers Nepean jusqu’au centre-ville',
+    desc_en: 'From Iris Street to Dow’s Lake, then the Rideau Canal pathway past Lansdowne',
+    desc_fr: 'De la rue Iris au lac Dow, puis le sentier du canal Rideau en passant par Lansdowne',
     color: '#9A6324',
     points: [
       [-75.771341, 45.340162], // start
@@ -186,8 +186,8 @@ const CORRIDORS = [
     id: 'findlay-creek',
     name_en: 'Findlay Creek',
     name_fr: 'Findlay Creek',
-    desc_en: 'From Findlay Creek to downtown',
-    desc_fr: 'De Findlay Creek jusqu’au centre-ville',
+    desc_en: 'Through Findlay Creek to Albion Road, then the Sawmill Creek Pathway and the Rideau Canal',
+    desc_fr: 'À travers Findlay Creek jusqu’au chemin Albion, puis le sentier du ruisseau Sawmill et le canal Rideau',
     color: '#000075',
     points: [
       [-75.604132, 45.315828], // start Dragonfly Park
@@ -253,8 +253,8 @@ const CORRIDORS = [
     id: 'vanier',
     name_en: 'Blackburn Hamlet / Gloucester',
     name_fr: 'Blackburn Hamlet / Gloucester',
-    desc_en: 'From Blackburn Hamlet and Gloucester to downtown',
-    desc_fr: 'De Blackburn Hamlet et Gloucester jusqu’au centre-ville',
+    desc_en: 'Pathway west past Blair Station, then McArthur Avenue through Vanier',
+    desc_fr: 'Sentier vers l’ouest en passant par la station Blair, puis l’avenue McArthur à travers Vanier',
     color: '#3dcbff',
     // Vanier is ridden slightly differently each way, so it is defined as
     // segments rather than one `points` array (see "Directional segments").
