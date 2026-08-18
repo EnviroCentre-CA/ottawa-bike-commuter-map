@@ -91,74 +91,80 @@
  },
  {
   "route": "stittsville",
-  "lon": -75.91175,
-  "lat": 45.26384,
+  "lon": -75.88256,
+  "lat": 45.28219,
   "minutes": 105
- },
- {
-  "route": "stittsville",
-  "lon": -75.87031,
-  "lat": 45.29182,
-  "minutes": 90
  },
  {
   "route": "stittsville",
   "lon": -75.84634,
   "lat": 45.31621,
+  "minutes": 90
+ },
+ {
+  "route": "stittsville",
+  "lon": -75.86107,
+  "lat": 45.32912,
   "minutes": 75
  },
  {
   "route": "stittsville",
-  "lon": -75.84081,
-  "lat": 45.33636,
-  "minutes": 60
- },
- {
-  "route": "stittsville",
-  "lon": -75.80114,
-  "lat": 45.36333,
-  "minutes": 45
- },
- {
-  "route": "stittsville",
-  "lon": -75.76405,
-  "lat": 45.38994,
-  "minutes": 30
- },
- {
-  "route": "stittsville",
-  "lon": -75.72906,
-  "lat": 45.41098,
-  "minutes": 15
- },
- {
-  "route": "kanata",
-  "lon": -75.88926,
-  "lat": 45.3266,
-  "minutes": 75
- },
- {
-  "route": "kanata",
   "lon": -75.84315,
   "lat": 45.34255,
   "minutes": 60
  },
  {
-  "route": "kanata",
+  "route": "stittsville",
   "lon": -75.80114,
   "lat": 45.36333,
   "minutes": 45
  },
  {
-  "route": "kanata",
+  "route": "stittsville",
   "lon": -75.76405,
   "lat": 45.38994,
   "minutes": 30
  },
  {
-  "route": "kanata",
+  "route": "stittsville",
   "lon": -75.73541,
   "lat": 45.40323,
+  "minutes": 15
+ },
+ {
+  "route": "kanata",
+  "lon": -75.92394,
+  "lat": 45.32728,
+  "minutes": 90
+ },
+ {
+  "route": "kanata",
+  "lon": -75.88105,
+  "lat": 45.34478,
+  "minutes": 75
+ },
+ {
+  "route": "kanata",
+  "lon": -75.8305,
+  "lat": 45.34281,
+  "minutes": 60
+ },
+ {
+  "route": "kanata",
+  "lon": -75.78694,
+  "lat": 45.37134,
+  "minutes": 45
+ },
+ {
+  "route": "kanata",
+  "lon": -75.75497,
+  "lat": 45.40456,
+  "minutes": 30
+ },
+ {
+  "route": "kanata",
+  "lon": -75.71605,
+  "lat": 45.41814,
   "minutes": 15
  },
  {

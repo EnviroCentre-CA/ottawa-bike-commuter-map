@@ -124,7 +124,13 @@ const CORRIDORS = [
     desc_en: 'Trans Canada Trail through Bells Corners, joining the Watts Creek Pathway',
     desc_fr: 'Sentier transcanadien via Bells Corners, rejoignant le sentier du ruisseau Watts',
     color: '#911EB4',
-    points: [[-75.9250, 45.2585], [-75.83670, 45.32471], DOWNTOWN],
+    points: [
+      [-75.911035, 45.264296], //Gouldberg rec center
+      [-75.848226, 45.317134], // Mup near robertson going north
+      [-75.861645, 45.341033], // Mup near Wesley Clover Park
+      [-75.754068, 45.395383], // Scott St
+      DOWNTOWN
+    ],
 
   },
   {
@@ -135,9 +141,11 @@ const CORRIDORS = [
     desc_fr: 'Sentier du ruisseau Watts jusqu’au sentier de la rivière des Outaouais au parc Andrew-Haydon',
     color: '#4363D8',
     points: [
-      [-75.91872, 45.32040], // Kanata ave
+      [-75.922110, 45.322093], // Whalen Park
       [-75.80812, 45.35641], // north east of Andrew Haydon park
-      [-75.754068, 45.395383], // Scott St
+      [-75.717616, 45.418043], // Mup behind war museum 
+      [-75.701733, 45.425875], // Mup behind Parliament 
+      [-75.690204, 45.422572], // Laurier on ramp by canal 
       DOWNTOWN
     ],
   },
