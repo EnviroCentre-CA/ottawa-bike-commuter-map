@@ -82,15 +82,17 @@ const CORRIDORS = [
     color: '#E6194B',
     points: [
       [-75.520218, 45.480506], // Oc transpo park and ride
-      [-75.521622, 45.480111], 
-      [-75.522045, 45.482078], 
-      [-75.524803, 45.483883], 
-      [-75.527174, 45.486779], 
+      [-75.521241, 45.479247], // MUP along highway
+      [-75.529584, 45.478413], // Bilberry drive
+      [-75.533592, 45.485626], // merging into river MUP
       [-75.63173, 45.46078], // left at the split to avoid gravel path
       [-75.64002, 45.45753], // south of airport
       [-75.64901, 45.45812], // west of airport
       [-75.67229, 45.45716], // right before river house
-      [-75.69869, 45.42321], // Wellington and occonor
+      [-75.692892, 45.424716], // just past rideau street
+      [-75.683586, 45.420385], // corktown foodbridge
+      [-75.685627, 45.420732], // west side canal MUP
+      [-75.690204, 45.422572], // Laurier on ramp by canal
       DOWNTOWN
     ],
   },
