@@ -12,7 +12,11 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  # Queued runs still collapse to the latest, but never cancel one that is
+  # already publishing. Killing deploy-pages mid-publish leaves the Pages
+  # deployment registered as in-progress, and every later run is then rejected
+  # with "due to in progress deployment" until that lock times out.
+  cancel-in-progress: false
 
 jobs:
   deploy:
