@@ -141,7 +141,11 @@ const CORRIDORS = [
     desc_fr: 'Sentier du ruisseau Watts jusqu’au sentier de la rivière des Outaouais au parc Andrew-Haydon',
     color: '#4363D8',
     points: [
-      [-75.922110, 45.322093], // middle of Whalen Park
+      [-75.923311, 45.323549], // top of Whalen Park
+      [-75.906533, 45.322746], // MUP into beaverbrook
+      [-75.904470, 45.324698], // Mup into Leacock dr
+      [-75.891148, 45.325284], // Armstrong park
+      [-75.885796, 45.338006], // Watts creek pathway
       [-75.80812, 45.35641], // north east of Andrew Haydon park
       [-75.717616, 45.418043], // Mup behind war museum 
       [-75.701733, 45.425875], // Mup behind Parliament 
