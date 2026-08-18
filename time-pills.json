@@ -223,26 +223,32 @@
  },
  {
   "route": "findlay-creek",
-  "lon": -75.62881,
-  "lat": 45.31504,
+  "lon": -75.61371,
+  "lat": 45.31343,
+  "minutes": 75
+ },
+ {
+  "route": "findlay-creek",
+  "lon": -75.64357,
+  "lat": 45.33363,
   "minutes": 60
  },
  {
   "route": "findlay-creek",
-  "lon": -75.65057,
-  "lat": 45.3454,
+  "lon": -75.66489,
+  "lat": 45.36645,
   "minutes": 45
  },
  {
   "route": "findlay-creek",
-  "lon": -75.67981,
-  "lat": 45.37384,
+  "lon": -75.69498,
+  "lat": 45.38127,
   "minutes": 30
  },
  {
   "route": "findlay-creek",
-  "lon": -75.6786,
-  "lat": 45.39828,
+  "lon": -75.68293,
+  "lat": 45.42002,
   "minutes": 15
  },
  {

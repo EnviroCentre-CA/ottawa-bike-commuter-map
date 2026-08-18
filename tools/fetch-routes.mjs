@@ -163,7 +163,7 @@ const CORRIDORS = [
     desc_fr: 'De la rue Iris au lac Dow, puis le sentier du canal Rideau en passant par Lansdowne',
     color: '#9A6324',
     points: [
-      [-75.771341, 45.340162], // start
+      [-75.775765, 45.333048], // start
       [-75.769684, 45.355720], // Iris
       [-75.767022, 45.353536], // Iris saw creek pathway
       [-75.763871, 45.352745], // left side of woodroofe
@@ -217,9 +217,11 @@ const CORRIDORS = [
       [-75.618419, 45.314016], // bunchberry way
       [-75.619606, 45.313533], // cut through towards Albion
       [-75.624703, 45.316483], // Quinn road 
-      [-75.67400, 45.38201], // Sawmill Creek / canal corridor
-      [-75.678811, 45.398451], // early left off Riverdale Ave onto Echo Dr
-      [-75.680142, 45.418484], // canal pathway near downtown
+      [-75.693516, 45.372390], // hogs back
+      [-75.699552, 45.377657], // MUP near Vincent Massey
+      [-75.695193, 45.381808], // rideau river footbridge
+      [-75.699847, 45.386528], // east of Carleton campus
+      [-75.687396, 45.421497], // canal pathway near downtown
       DOWNTOWN,
     ],
   },
