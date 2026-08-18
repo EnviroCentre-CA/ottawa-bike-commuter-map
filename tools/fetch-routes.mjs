@@ -170,8 +170,13 @@ const CORRIDORS = [
     desc_fr: 'De Strandherd vers le nord par le sentier de l’avenue Woodroffe, puis la rue Albert jusqu’à la bande cyclable Laurier',
     color: '#F58231',
     points: [
-      [-75.72704, 45.27536], // Strandherd Dr at Greenpointe Park
+      [-75.730999, 45.281795], // Stinton park near Berrigan dr
+      [-75.727145, 45.292025], // near longfields on MUP
+      [-75.730717, 45.298396], // near fallowfield on MUP
       [-75.735882, 45.307277], // Woodroffe Ave corridor (south) — keeps route off Prince of Wales
+      [-75.746076, 45.325685], // Nepean Sportsplex
+      [-75.742834, 45.326941], // Nepean Sportsplex on MUP further down
+      [-75.744826, 45.330082], // Nepean Sportsplex hunt club crossing
       [-75.727046, 45.346903], // Woodroffe Ave corridor (north)
       [-75.732923, 45.357044], // capilano
       [-75.72176, 45.40992], // Albert St corridor cycleway east of Bayview
