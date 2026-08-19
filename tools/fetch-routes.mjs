@@ -263,7 +263,7 @@ const CORRIDORS = [
     name_fr: 'Nepean',
     desc_en: 'From Iris Street to Dow’s Lake, then the Rideau Canal pathway past Lansdowne',
     desc_fr: 'De la rue Iris au lac Dow, puis le sentier du canal Rideau en passant par Lansdowne',
-    color: '#9A6324',
+    color: '#fff200eb',
     points: [
       [-75.775765, 45.333048], // start
       [-75.769684, 45.355720], // Iris
@@ -387,7 +387,7 @@ const CORRIDORS = [
     name_fr: 'Greenboro',
     desc_en: 'From Greenboro up the Conroy Road pathway, then through Alta Vista to downtown',
     desc_fr: 'De Greenboro par le sentier du chemin Conroy, puis à travers Alta Vista jusqu’au centre-ville',
-    color: '#fff200eb',
+    color: '#9A6324',
     points: [
       [-75.635208, 45.362743], // start at community center west of Bruff park
       [-75.620919, 45.366827], // mup on the left side of Conroy rd
