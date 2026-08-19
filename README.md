@@ -17,16 +17,16 @@ possible:
 
 | Route                         | Distance | Time    | Car-free |
 | ----------------------------- | -------- | ------- | -------- |
-| Barrhaven                     | 21.8 km  | 78 min  | 63%      |
+| Barrhaven                     | 22.1 km  | 78 min  | 64%      |
 | Blackburn Hamlet / Gloucester | 17.7 km  | 66 min  | 58%      |
 | Findlay Creek / South Keys    | 19.7 km  | 72 min  | 72%      |
-| Greenboro                     | 11.9 km  | 45 min  | 68%      |
+| Greenboro                     | 12.4 km  | 47 min  | 69%      |
 | Kanata North                  | 27.8 km  | 94 min  | 88%      |
 | Nepean                        | 18.9 km  | 65 min  | 92%      |
 | Orléans                      | 23.2 km  | 82 min  | 81%      |
 | Orléans South                | 30.4 km  | 107 min | 71%      |
 | Pineview                      | 10 km    | 36 min  | 65%      |
-| Stittsville / Kanata South    | 31.2 km  | 116 min | 97%      |
+| Stittsville / Kanata South    | 31.4 km  | 117 min | 98%      |
 
 These figures change whenever a corridor is edited, and `npm run routes` prints the
 current set — treat the table as a snapshot rather than the source of truth.
@@ -35,10 +35,12 @@ A separate South Keys / Hunt Club corridor was retired: Findlay Creek / South Ke
 passes within 80 m of the Juno Beach bridge on the Sawmill Creek Pathway, so it
 already served the same riders over almost the same alignment.
 
-Figures are for the ride **to** downtown. Two corridors differ slightly on the
-way back: Blackburn Hamlet / Gloucester (17.1 km / 64 min) and Findlay Creek /
-South Keys (21.3 km / 76 min) — see below. Times come from the model described under
-"Ride time estimates", not from distance alone.
+Figures are for the ride **to** downtown. Four corridors are ridden differently
+each way. Blackburn Hamlet / Gloucester (17.1 km / 64 min home) and Findlay Creek
+/ South Keys (21.3 km / 76 min home) diverge for kilometres; Barrhaven (22 km
+home) and Stittsville / Kanata South (31.3 km / 116 min home) share one short
+pair by the new library — see below. Times come from the model described under "Ride time estimates", not from
+distance alone.
 
 Other features:
 
@@ -59,7 +61,12 @@ Other features:
   homeward it follows the pathways east of the campus through Brewer Park and
   then the canal. The outbound leg is pinned to both ends of the protected
   stretch of Glebe Avenue, because unaided the router prefers Clemow Avenue a
-  block north, which has no cycling infrastructure at all. Arrows appear from zoom 12 in, and the side panel explains
+  block north, which has no cycling infrastructure at all. Barrhaven and
+  Stittsville / Kanata South share a much shorter pair by the new library — 211 m
+  out, 160 m back — which is being rebuilt, so those legs are drawn rather than
+  routed (see "Sections under construction"). Only the outbound climb there is
+  car-free; the spur crossing Empress Avenue and the whole homebound leg are
+  shared with traffic. Arrows appear from zoom 12 in, and the side panel explains
   them when such a route is selected.
 - Selecting a route (from the list or by clicking its line) isolates it and
   zooms to it; clicking the selected route again describes that section —
@@ -118,6 +125,11 @@ Two things worth knowing when editing corridors:
   them. A swapped pair produces a `datafile ... not found` error from BRouter.
 - Where routes overlap, the one appearing **later** in the `CORRIDORS` array is
   drawn on top.
+- Corridors that share an alignment should share its definition. `bayviewToDowntown()`
+  holds everything from `BAYVIEW_JOIN` to downtown, and Barrhaven and Stittsville
+  both spread it into their `segments`, so the two cannot drift apart. It is a
+  function, not a constant: the pipeline reverses `home` geometry in place, so two
+  corridors sharing one array would reverse it twice.
 - `MANUAL_TRIMS` removes individual points from the drawn line to tidy up
   crossing artifacts. It is cosmetic only and does not change the routing —
   read the comments there before adding a box, as it is easy to delete a real
@@ -318,10 +330,12 @@ Things to get right:
 - **Arrows hide where another route is drawn on top.** At full strength every
   corridor is equally visible, so arrows on a one-way section running underneath
   another route read as describing *that* route — Findlay Creek / South Keys
-  under Greenboro along O'Connor Street being the case that prompted this. The
-  build splits each directional feature into runs by whether another corridor
-  shadows it (within `SHADOW_TOLERANCE_M`, 15 m) and marks the unshadowed ones
-  `solo`. `arrowFilter()` in `index.html` then shows:
+  under Greenboro along O'Connor Street being the case that prompted this. Only a
+  corridor drawn **later** can do this, since that is the one whose colour the
+  reader sees; a one-way section drawn on top of its neighbours keeps its arrows.
+  The build splits each directional feature into runs by whether a later corridor
+  shadows it (within `SHADOW_TOLERANCE_M`, 15 m) and marks the rest `solo`.
+  `arrowFilter()` in `index.html` then shows:
 
   | view | filter |
   | ---- | ------ |
@@ -337,6 +351,60 @@ Things to get right:
   Every run prints its share at the end of a run, and a corridor whose one-way
   section is *entirely* shadowed is called out — it would show no arrows at all
   until selected, which is worth knowing rather than discovering on the map.
+  Stittsville / Kanata South trips that warning by design: it shares Barrhaven's
+  pair exactly, and Barrhaven is drawn on top, so only one set of arrows appears
+  in the overview instead of two identical sets stacked. Selecting either route
+  brings its own arrows back.
+
+  Taking draw order into account is what makes this usable rather than
+  destructive. It was added when Barrhaven's outbound leg ran along Albert Street
+  under Nepean, Kanata and Stittsville while being drawn above all three: counting
+  those left it with no arrows at all while its homeward leg kept them, reading as
+  though the corridor were one-way homebound only. That corridor has since moved
+  off Albert Street, but the hazard is general — near downtown several corridors
+  share the same few streets, and the one drawn on top is not usually the one you
+  are looking at.
+
+#### Sections under construction
+
+A segment marked `literal: true` is drawn straight from its own `points` instead
+of being sent to BRouter:
+
+```js
+{
+  dir: 'towork',
+  literal: true,
+  safety: 'carfree',
+  points: [BAR_WEST, /* ... */ BAR_EAST],
+}
+```
+
+Use it only where OSM cannot describe the route yet. Barrhaven's pair by the new
+library is the case: the paths there are being rebuilt, the connections are not
+mapped, and the router detoured roughly 300 m around the missing links — 106 m of
+it along a `bicycle=no` footway. Routing produced a line nobody could ride, so
+the coordinates are drawn as given.
+
+What a literal segment gives up, and why that is acceptable here:
+
+- **`safety` must be stated**, since there are no way tags to infer it from. It
+  therefore reflects a judgement rather than data — keep these sections short so
+  the judgement barely moves the car-free percentage. Only the outbound direction
+  feeds `carfree_pct`, and Barrhaven's outbound legs are 211 m of 22 km.
+- **Split a leg into several literal segments to vary the class along it.** Give
+  them the same `dir` and let consecutive ones share an endpoint; the pipeline
+  treats them as one direction. Barrhaven's outbound leg is two: 40 m of `road`
+  for the spur across Empress Avenue, then 171 m of `carfree` climbing to the
+  library.
+- **No signals or stop signs are charged.** Inventing controls to go with invented
+  geometry would be a guess on top of a guess. `pace` picks the cruise speed
+  (default `pathway`), so the section still contributes time.
+- **The line is straight between consecutive points**, so supply enough of them
+  to describe the shape.
+
+Remove `literal` once the ways are mapped, and check the drawn line against what
+the router then produces.
+
 - `distance_km` and `minutes` are the outbound figures. When the return differs,
   features also carry `distance_km_home` and `minutes_home`, which the section
   popup shows. The two directions are timed separately, so a route can take
