@@ -46,6 +46,11 @@ const DOWNTOWN = [-75.696914, 45.419324]; // Laurier Ave W & O'Connor St
 const SPLIT = [-75.63992, 45.43497];  // corner where the outbound leg turns north
 const REJOIN = [-75.64834, 45.43224]; // on the pathway, ~30 m from the requested point
 
+// Where the Findlay Creek route's two directions part company. Unlike Vanier
+// there is no rejoin point: from here the two legs run separately all the way
+// in, and only meet again at DOWNTOWN.
+const FC_SPLIT = [-75.695193, 45.381808]; // Rideau River footbridge
+
 const CORRIDORS = [
   {
     id: 'orleans-south',
@@ -202,42 +207,73 @@ const CORRIDORS = [
     ],
   },
   {
+    // Covers the retired south-keys corridor too: this route passes within 80 m
+    // of the Juno Beach bridge on its way up the Sawmill Creek Pathway.
     id: 'findlay-creek',
-    name_en: 'Findlay Creek',
-    name_fr: 'Findlay Creek',
+    name_en: 'Findlay Creek / South Keys',
+    name_fr: 'Findlay Creek / South Keys',
     desc_en: 'Through Findlay Creek to Albion Road, then the Sawmill Creek Pathway and the Rideau Canal',
     desc_fr: 'À travers Findlay Creek jusqu’au chemin Albion, puis le sentier du ruisseau Sawmill et le canal Rideau',
     color: '#000075',
-    points: [
-      [-75.604132, 45.315828], // start Dragonfly Park
-      [-75.607717, 45.315648], // spartina st 
-      [-75.611031, 45.315014], // diamond jubilee park 
-      [-75.614645, 45.313090], // creekview way
-      [-75.616217, 45.312538], // creekview way further down
-      [-75.618419, 45.314016], // bunchberry way
-      [-75.619606, 45.313533], // cut through towards Albion
-      [-75.624703, 45.316483], // Quinn road 
-      [-75.693516, 45.372390], // hogs back
-      [-75.699552, 45.377657], // MUP near Vincent Massey
-      [-75.695193, 45.381808], // rideau river footbridge
-      [-75.699847, 45.386528], // east of Carleton campus
-      [-75.687396, 45.421497], // canal pathway near downtown
-      DOWNTOWN,
-    ],
-  },
-  {
-    id: 'south-keys',
-    name_en: 'South Keys / Hunt Club',
-    name_fr: 'South Keys / Hunt Club',
-    desc_en: 'Sawmill Creek Pathway to the Rideau Canal Eastern Pathway',
-    desc_fr: 'Sentier du ruisseau Sawmill jusqu’au sentier est du canal Rideau',
-    color: '#F032E6',
-    points: [
-      [-75.663421, 45.354871], // start owl ark
-      [-75.658452, 45.353785], // juno beach bridge
-      [-75.67400, 45.38201], // Sawmill Creek / canal corridor
-      [-75.678811, 45.398451], // early left off Riverdale Ave onto Echo Dr
-      DOWNTOWN,
+    // Ridden differently each way through the Carleton campus area, so it is
+    // defined as segments rather than one `points` array (see "Directional
+    // segments" in the header comment).
+    segments: [
+      {
+        points: [
+          [-75.604132, 45.315828], // start Dragonfly Park
+          [-75.607717, 45.315648], // spartina st
+          [-75.611031, 45.315014], // diamond jubilee park
+          [-75.614645, 45.313090], // creekview way
+          [-75.616217, 45.312538], // creekview way further down
+          [-75.618419, 45.314016], // bunchberry way
+          [-75.619606, 45.313533], // cut through towards Albion
+          [-75.624703, 45.316483], // Quinn road
+          [-75.684639, 45.373423], // Brookfield MUP
+          [-75.693516, 45.372390], // hogs back
+          [-75.699552, 45.377657], // MUP near Vincent Massey
+          FC_SPLIT,
+        ],
+      },
+      {
+        // To work: north up University Dr through the campus, over Bronson at
+        // the north crossing, then up through the Glebe on residential streets.
+        dir: 'towork',
+        points: [
+          FC_SPLIT,
+          [-75.695649, 45.387878], // University Dr before the roundabout
+          [-75.695876, 45.388740], // University Dr at the roundabout
+          [-75.696155, 45.388800], // University Dr on MUP left side of roundabout
+          [-75.695847, 45.391942], // north crossing at Bronson
+          [-75.695485, 45.392358], // Bronson protected bike lane
+          [-75.694261, 45.395941], // Findlay Ave
+          [-75.692863, 45.399259], // Craig St
+          // Mid-way along the protected track beside Glebe Ave between Bank St
+          // and O'Connor St — OSM way 1420984002, highway=cycleway, oneway
+          // eastbound, so it suits the outbound leg only. One via is exactly
+          // right here: with none the router takes Clemow Ave a block north,
+          // which has no cycling infrastructure, and pinning both ends as well
+          // makes it double back 120 m to enter the one-way from the far end.
+          [-75.686700, 45.406296],
+          [-75.688455, 45.409513], // O'Connor Bikeway
+          DOWNTOWN,
+        ],
+      },
+      {
+        // Homeward: the corridor's original alignment, east of the campus and
+        // through Brewer Park, then the canal pathway. Written suburb-first like
+        // every `home` segment, so it reads south-to-north even though the ride
+        // goes the other way.
+        dir: 'home',
+        points: [
+          FC_SPLIT,
+          [-75.693244, 45.386106], // east of Carleton campus
+          [-75.688308, 45.388219], // Brewers park
+          [-75.691270, 45.393089], // Seneca st
+          [-75.687396, 45.421497], // canal pathway near downtown
+          DOWNTOWN,
+        ],
+      },
     ],
   },
   {
@@ -696,9 +732,9 @@ function splitBySafety(coordinates, messages) {
     const end = keyIndices.get(endKey)?.find(i => i > cur);
     if (end === undefined) continue; // endpoint trimmed away or zero-length
 
-    const safety = classify(row[iTags]);
     const meters = Number(row[iDist]) || 0;
     const coords = coordinates.slice(cur, end + 1);
+    const safety = classify(row[iTags]);
 
     const prev = stretches[stretches.length - 1];
     if (prev && prev.safety === safety) {
@@ -874,11 +910,149 @@ for (const c of CORRIDORS) {
   await new Promise(r => setTimeout(r, 1500)); // be polite to the public server
 }
 
-const out = { type: 'FeatureCollection', features };
+
+// ---------------------------------------------------------------------------
+// Arrow visibility where a one-way section runs under another route
+// ---------------------------------------------------------------------------
+
+// In the all-routes view, directional arrows read as belonging to whichever line
+// is drawn on top. Where a one-way section shares its alignment with another
+// corridor that is drawn later, the arrows appear to describe that corridor
+// instead — Findlay Creek / South Keys under Greenboro on O'Connor St being the
+// case that prompted this.
+//
+// So split each directional feature into runs by whether another route shadows
+// it, and mark the unshadowed runs `solo`. The map shows arrows only on those
+// until a route is selected, at which point the other routes are dimmed and the
+// full set of arrows is unambiguous again.
+//
+// Measured on the current corridors, a directional vertex is either within 15 m
+// of another route or more than 30 m from one, with almost nothing in between,
+// so the tolerance is not delicately balanced.
+const SHADOW_TOLERANCE_M = 15;
+// Below about one arrow spacing a run cannot show an arrow anyway, and
+// alternating short runs would just make arrows flicker in and out while panning.
+const MIN_RUN_M = 70;
+
+/** Perpendicular distance in metres from point c to the segment a->b. */
+function pointToSegment(c, a, b) {
+  const k = Math.cos((c[1] * Math.PI) / 180);
+  const px = (c[0] - a[0]) * k, py = c[1] - a[1];
+  const vx = (b[0] - a[0]) * k, vy = b[1] - a[1];
+  const vv = vx * vx + vy * vy;
+  const t = vv ? Math.max(0, Math.min(1, (px * vx + py * vy) / vv)) : 0;
+  return Math.hypot(px - t * vx, py - t * vy) * (Math.PI / 180) * 6371000;
+}
+
+function lineLength(coords) {
+  let m = 0;
+  for (let i = 1; i < coords.length; i++) {
+    m += metersBetween(coords[i - 1][0], coords[i - 1][1], coords[i][0], coords[i][1]);
+  }
+  return m;
+}
+
+/**
+ * Replace each directional feature with one feature per run of consistent
+ * shadowing. Runs share their boundary vertex so the drawn line stays unbroken,
+ * and every run inherits the original properties, plus `solo` when no other
+ * route shadows it.
+ */
+function markSoloRuns(features) {
+  const directional = features.filter(f => f.properties.dir);
+  if (!directional.length) return { features, report: [] };
+
+  const out = [], report = [];
+  // Bounding box per route, so most other-route lines are skipped outright.
+  const byRoute = new Map();
+  for (const f of features) {
+    const id = f.properties.id;
+    if (!byRoute.has(id)) byRoute.set(id, []);
+    byRoute.get(id).push(f.geometry.coordinates);
+  }
+
+  const shadowedBy = (c, ownId) => {
+    for (const [id, lines] of byRoute) {
+      if (id === ownId) continue;
+      for (const line of lines) {
+        for (let i = 1; i < line.length; i++) {
+          if (pointToSegment(c, line[i - 1], line[i]) <= SHADOW_TOLERANCE_M) return id;
+        }
+      }
+    }
+    return null;
+  };
+
+  for (const f of features) {
+    if (!f.properties.dir) { out.push(f); continue; }
+    const coords = f.geometry.coordinates;
+    const shadow = coords.map(c => shadowedBy(c, f.properties.id));
+
+    // Runs of consecutive vertices sharing a shadowed/unshadowed state.
+    let runs = [];
+    for (let i = 0; i < coords.length; i++) {
+      const sh = !!shadow[i];
+      if (!runs.length || runs[runs.length - 1].shadowed !== sh) runs.push({ shadowed: sh, from: i, to: i });
+      else runs[runs.length - 1].to = i;
+    }
+
+    // Absorb runs too short to carry an arrow into their longer neighbour.
+    let changed = true;
+    while (changed && runs.length > 1) {
+      changed = false;
+      for (let i = 0; i < runs.length; i++) {
+        const r = runs[i];
+        if (lineLength(coords.slice(r.from, r.to + 2)) >= MIN_RUN_M) continue;
+        const prev = runs[i - 1], next = runs[i + 1];
+        const target = !prev ? next : !next ? prev
+          : (lineLength(coords.slice(prev.from, prev.to + 2))
+             >= lineLength(coords.slice(next.from, next.to + 2)) ? prev : next);
+        target.from = Math.min(target.from, r.from);
+        target.to = Math.max(target.to, r.to);
+        runs.splice(i, 1);
+        changed = true;
+        break;
+      }
+    }
+    runs.sort((a, b) => a.from - b.from);
+
+    for (const r of runs) {
+      // +2 so consecutive runs share a vertex and the line does not gap.
+      const slice = coords.slice(r.from, Math.min(r.to + 2, coords.length));
+      if (slice.length < 2) continue;
+      out.push({
+        type: 'Feature',
+        properties: { ...f.properties, ...(r.shadowed ? {} : { solo: 1 }) },
+        geometry: { type: 'LineString', coordinates: slice },
+      });
+      report.push({ id: f.properties.id, dir: f.properties.dir, shadowed: r.shadowed, meters: lineLength(slice) });
+    }
+  }
+  return { features: out, report };
+}
+
+const { features: outFeatures, report: soloReport } = markSoloRuns(features);
+
+const out = { type: 'FeatureCollection', features: outFeatures };
 fs.writeFileSync(path.join(root, 'routes.geojson'), JSON.stringify(out));
-console.log(`Wrote routes.geojson (${features.length} features, ${CORRIDORS.length} routes)`);
+console.log(`Wrote routes.geojson (${outFeatures.length} features, ${CORRIDORS.length} routes)`);
+
+// Report the arrow split, so a route whose one-way section is entirely shadowed —
+// and therefore shows no arrows at all in the all-routes view — is visible here.
+if (soloReport.length) {
+  console.log('');
+  console.log('One-way sections, arrows shown only on the unshadowed runs:');
+  for (const id of [...new Set(soloReport.map(r => r.id))]) {
+    const mine = soloReport.filter(r => r.id === id);
+    const solo = mine.filter(r => !r.shadowed).reduce((a, r) => a + r.meters, 0);
+    const total = mine.reduce((a, r) => a + r.meters, 0);
+    console.log(`  ${id}: ${Math.round(solo)} m of ${Math.round(total)} m carry arrows`
+      + ` (${mine.length} runs)${solo ? '' : '  <-- no arrows at all'}`);
+  }
+}
 
 fs.writeFileSync(path.join(root, 'time-pills.json'), JSON.stringify(pills, null, 1));
 const pillRoutes = [...new Set(pills.map(p => p.route))];
 console.log(`Wrote time-pills.json (${pills.length} markers on ${pillRoutes.length} route(s): `
   + `${pillRoutes.join(', ') || 'none'})`);
+

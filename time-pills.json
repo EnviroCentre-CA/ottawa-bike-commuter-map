@@ -223,51 +223,27 @@
  },
  {
   "route": "findlay-creek",
-  "lon": -75.61371,
-  "lat": 45.31343,
-  "minutes": 75
- },
- {
-  "route": "findlay-creek",
   "lon": -75.64357,
   "lat": 45.33363,
   "minutes": 60
  },
  {
   "route": "findlay-creek",
-  "lon": -75.66489,
-  "lat": 45.36645,
+  "lon": -75.6529,
+  "lat": 45.34928,
   "minutes": 45
  },
  {
   "route": "findlay-creek",
-  "lon": -75.69498,
-  "lat": 45.38127,
+  "lon": -75.68423,
+  "lat": 45.37399,
   "minutes": 30
  },
  {
   "route": "findlay-creek",
-  "lon": -75.68293,
-  "lat": 45.42002,
+  "lon": -75.69612,
+  "lat": 45.39516,
   "minutes": 15
- },
- {
-  "route": "south-keys",
-  "lon": -75.67981,
-  "lat": 45.37384,
-  "minutes": 30
- },
- {
-  "route": "south-keys",
-  "lon": -75.67463,
-  "lat": 45.38685,
-  "minutes": 20
- },
- {
-  "route": "south-keys",
-  "lon": -75.68197,
-  "lat": 45.40412,
-  "minutes": 10
  },
  {
   "route": "alta-vista",

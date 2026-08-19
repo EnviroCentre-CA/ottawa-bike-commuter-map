@@ -622,7 +622,7 @@ function overlayLayers() {
       // empty for every route that is ridden the same way both ways.
       id: 'commuter-arrows',
       type: 'symbol', source: 'commuter',
-      filter: ['has', 'dir'],
+      filter: arrowFilter(),
       // Below this the one-way pair is too small to read as two lines.
       minzoom: 12,
       layout: {
@@ -662,6 +662,24 @@ function hasDirections(id) {
     && routesData.features.some(f => f.properties.id === id && f.properties.dir);
 }
 
+/**
+ * Which one-way sections show arrows.
+ *
+ * With no route selected, every corridor is drawn at full strength, so arrows on
+ * a one-way section that runs underneath another route read as belonging to that
+ * route — Findlay Creek / South Keys under Greenboro on O'Connor St, for
+ * instance. `tools/fetch-routes.mjs` marks the runs no other route shadows with
+ * `solo`, and only those show arrows here.
+ *
+ * Selecting a route dims the others to 0.12, so the ambiguity is gone and the
+ * full set of arrows is more useful than a partial one.
+ */
+function arrowFilter() {
+  return selectedId
+    ? ['has', 'dir']
+    : ['all', ['has', 'dir'], ['has', 'solo']];
+}
+
 function applySelection() {
   if (!map.getLayer('commuter-line')) return;
   // Selected route: thickness encodes protection from car traffic.
@@ -688,6 +706,7 @@ function applySelection() {
   map.setPaintProperty('commuter-arrows', 'icon-opacity', selectedId
     ? ['case', ['==', ['get', 'id'], selectedId], 1, 0.15]
     : 1);
+  map.setFilter('commuter-arrows', arrowFilter());
   document.querySelectorAll('.route').forEach(el => {
     const on = el.dataset.id === selectedId;
     el.classList.toggle('active', on);
