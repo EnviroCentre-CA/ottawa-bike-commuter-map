@@ -198,6 +198,10 @@ const CORRIDORS = [
       [-75.744826, 45.330082], // Nepean Sportsplex hunt club crossing
       [-75.727046, 45.346903], // Woodroffe Ave corridor (north)
       [-75.732923, 45.357044], // capilano
+      [-75.724025, 45.360236], // Buffalo Cir
+      [-75.718841, 45.364266], // Deer Park road
+      [-75.715937, 45.369262], // Malibu Terrace
+      [-75.715320, 45.369688], // protected bike lane on Fisher
       [-75.72176, 45.40992], // Albert St corridor cycleway east of Bayview
       [-75.71399, 45.41252], // Albert St near booth
       [-75.70911, 45.41520], // Slater St near new library
