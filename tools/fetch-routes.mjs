@@ -288,11 +288,7 @@ const CORRIDORS = [
       [-75.630547, 45.383532], // left side of intersection walkley and conroy
       [-75.630204, 45.383671], // right side of intersection walkley and conroy
       [-75.630450, 45.383948], // on mup north of intersection walkley and conroy
-      [-75.643209, 45.396175], // Lynda Lane park
-      [-75.668822, 45.394078], // Billings Ave, west end near John Murphy Park
-      // Staircase north through the pathways east of Riverside Dr — four
-      // via-points because each leg is short and the router otherwise cuts
-      // across to Alta Vista Dr instead.
+      [-75.668538, 45.393248], // Pleasant park
       [-75.667757, 45.396604],
       [-75.668635, 45.397303],
       [-75.667513, 45.398849], // last jog before Smyth Rd / Rideau River Eastern Pathway
