@@ -327,15 +327,27 @@ Things to get right:
   runs both legs from the split straight to `DOWNTOWN`.
 - Only directional segments get a `dir` property in the output, and the map's
   arrow layer keys off `dir`. Shared sections stay unmarked.
+- **A stretch both directions use is not one-way.** A `segments` split usually
+  leaves the two legs sharing the path for a while either side of the divergence:
+  Findlay Creek / South Keys runs on the same pathway for about 400 m north of the
+  Rideau River footbridge before the legs part. Marking that as one-way put
+  opposing arrows on top of each other. So the build tests each directional
+  vertex against the corridor's **own opposite leg** (again within
+  `SHADOW_TOLERANCE_M`) and drops `dir` outright on the runs that match — not just
+  the arrows, since nothing downstream should describe those stretches as one-way,
+  the section popup included. Arrows then begin only where the legs are genuinely
+  apart, about 30 m in Findlay Creek's case.
 - **Arrows hide where another route is drawn on top.** At full strength every
   corridor is equally visible, so arrows on a one-way section running underneath
   another route read as describing *that* route — Findlay Creek / South Keys
   under Greenboro along O'Connor Street being the case that prompted this. Only a
   corridor drawn **later** can do this, since that is the one whose colour the
   reader sees; a one-way section drawn on top of its neighbours keeps its arrows.
-  The build splits each directional feature into runs by whether a later corridor
-  shadows it (within `SHADOW_TOLERANCE_M`, 15 m) and marks the rest `solo`.
-  `arrowFilter()` in `index.html` then shows:
+
+  So each directional feature is split into runs of three states, strongest first:
+  `both` (the corridor's own other leg is here too — `dir` removed), `shadowed`
+  (one-way but a later corridor covers it — arrows only on selection), and `solo`
+  (one-way and unobstructed). `arrowFilter()` in `index.html` then shows:
 
   | view | filter |
   | ---- | ------ |

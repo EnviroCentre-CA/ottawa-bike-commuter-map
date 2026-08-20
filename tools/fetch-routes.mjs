@@ -213,7 +213,7 @@ const CORRIDORS = [
       [-75.634724, 45.419118], // bike crossing at the intersection just west
       [-75.66527, 45.41254], // Hurdman
       DOWNTOWN,
-    ],
+        ],
   },
   {
     id: 'stittsville',
@@ -1141,16 +1141,39 @@ function markSoloRuns(features) {
     return null;
   };
 
+  // Geometry of each route's own opposite direction, for the `both` test below.
+  const opposite = new Map();
+  for (const f of features) {
+    if (!f.properties.dir) continue;
+    const k = f.properties.id + '/' + (f.properties.dir === 'towork' ? 'home' : 'towork');
+    if (!opposite.has(k)) opposite.set(k, []);
+    opposite.get(k).push(f.geometry.coordinates);
+  }
+  const usedBothWays = (c, id, dir) => {
+    for (const line of opposite.get(id + '/' + dir) || []) {
+      for (let i = 1; i < line.length; i++) {
+        if (pointToSegment(c, line[i - 1], line[i]) <= SHADOW_TOLERANCE_M) return true;
+      }
+    }
+    return false;
+  };
+
   for (const f of features) {
     if (!f.properties.dir) { out.push(f); continue; }
     const coords = f.geometry.coordinates;
-    const shadow = coords.map(c => shadowedBy(c, f.properties.id));
+    const { id, dir } = f.properties;
+    // Three states per vertex, strongest first:
+    //   both     — this route's other direction runs here too, so the stretch is
+    //              not one-way at all and must never carry an arrow
+    //   shadowed — genuinely one-way, but a later corridor covers it, so the
+    //              arrow would read as that corridor's until this one is selected
+    //   solo     — one-way and unobstructed
+    const state = coords.map(c => usedBothWays(c, id, dir) ? 'both'
+      : shadowedBy(c, id) ? 'shadowed' : 'solo');
 
-    // Runs of consecutive vertices sharing a shadowed/unshadowed state.
     let runs = [];
     for (let i = 0; i < coords.length; i++) {
-      const sh = !!shadow[i];
-      if (!runs.length || runs[runs.length - 1].shadowed !== sh) runs.push({ shadowed: sh, from: i, to: i });
+      if (!runs.length || runs[runs.length - 1].state !== state[i]) runs.push({ state: state[i], from: i, to: i });
       else runs[runs.length - 1].to = i;
     }
 
@@ -1178,12 +1201,14 @@ function markSoloRuns(features) {
       // +2 so consecutive runs share a vertex and the line does not gap.
       const slice = coords.slice(r.from, Math.min(r.to + 2, coords.length));
       if (slice.length < 2) continue;
-      out.push({
-        type: 'Feature',
-        properties: { ...f.properties, ...(r.shadowed ? {} : { solo: 1 }) },
-        geometry: { type: 'LineString', coordinates: slice },
-      });
-      report.push({ id: f.properties.id, dir: f.properties.dir, shadowed: r.shadowed, meters: lineLength(slice) });
+      // A `both` run loses `dir` outright rather than merely losing its arrows:
+      // it is shared road, so nothing downstream should describe it as one-way,
+      // including the section popup.
+      const props = { ...f.properties };
+      if (r.state === 'both') delete props.dir;
+      else if (r.state === 'solo') props.solo = 1;
+      out.push({ type: 'Feature', properties: props, geometry: { type: 'LineString', coordinates: slice } });
+      report.push({ id, dir, state: r.state, meters: lineLength(slice) });
     }
   }
   return { features: out, report };
@@ -1199,13 +1224,15 @@ console.log(`Wrote routes.geojson (${outFeatures.length} features, ${CORRIDORS.l
 // and therefore shows no arrows at all in the all-routes view — is visible here.
 if (soloReport.length) {
   console.log('');
-  console.log('One-way sections, arrows shown only on the unshadowed runs:');
+  console.log('One-way sections, arrows shown only where the stretch is truly one-way:');
   for (const id of [...new Set(soloReport.map(r => r.id))]) {
     const mine = soloReport.filter(r => r.id === id);
-    const solo = mine.filter(r => !r.shadowed).reduce((a, r) => a + r.meters, 0);
-    const total = mine.reduce((a, r) => a + r.meters, 0);
-    console.log(`  ${id}: ${Math.round(solo)} m of ${Math.round(total)} m carry arrows`
-      + ` (${mine.length} runs)${solo ? '' : '  <-- no arrows at all'}`);
+    const m = st => Math.round(mine.filter(r => r.state === st).reduce((a, r) => a + r.meters, 0));
+    const total = Math.round(mine.reduce((a, r) => a + r.meters, 0));
+    console.log(`  ${id}: ${m('solo')} m of ${total} m carry arrows (${mine.length} runs)`
+      + `${m('both') ? `; ${m('both')} m ridden both ways, no longer marked one-way` : ''}`
+      + `${m('shadowed') ? `; ${m('shadowed')} m hidden under a later route` : ''}`
+      + `${m('solo') ? '' : '  <-- no arrows at all'}`);
   }
 }
 
