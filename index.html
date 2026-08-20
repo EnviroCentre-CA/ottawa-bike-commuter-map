@@ -516,9 +516,88 @@ const map = new maplibregl.Map({
 map.addControl(new maplibregl.NavigationControl({ showCompass: false }));
 map.addControl(new maplibregl.GeolocateControl({ trackUserLocation: true }));
 
+/**
+ * Basemap label size, relative to what the style files specify. Applied here
+ * rather than edited into style-default.json and style-high-contrast.json so it
+ * survives regenerating them and cannot drift between the two variants.
+ */
+const LABEL_SCALE = 1.25;
+
+/**
+ * Per-layer overrides, for label classes the uniform scale leaves too small.
+ *
+ * The style gives minor roads the smallest sizes of anything on the map — 9 to
+ * 12 px, against 10 to 17 for primary roads — so scaling everything equally keeps
+ * residential street names the hardest labels to read. Note that raising a size
+ * also costs coverage: bigger labels collide sooner, so fewer of them fit and
+ * some names only appear a zoom level later.
+ */
+const LABEL_SCALE_BY_LAYER = {
+  'label-road-minor': 1.5,
+};
+
+/**
+ * Label layers that should borrow another layer's text colour and halo.
+ *
+ * Minor-road labels are the palest text on the map — #9e968a in the default
+ * style, #999999 in high contrast, against #6a6258 for secondary roads — and
+ * they carry a thinner halo too, so residential street names wash out against
+ * the basemap. The values are copied from the sibling layer rather than
+ * hardcoded, so each style variant keeps its own palette and the fix survives
+ * regenerating the style files.
+ */
+const LABEL_PAINT_FROM = {
+  'label-road-minor': 'label-road-secondary',
+};
+
+const BORROWED_TEXT_PAINT = ['text-color', 'text-halo-color', 'text-halo-width', 'text-halo-blur'];
+
+/**
+ * Scale a `text-size` value, whatever form the style gives it in.
+ *
+ * The output values are scaled in place rather than the whole thing being
+ * wrapped in `['*', k, …]`: a zoom-driven `interpolate` has to be the outermost
+ * expression of a layout property, so wrapping one is rejected as invalid and
+ * the style never loads.
+ */
+function scaleTextSize(size, k) {
+  if (typeof size === 'number') return Math.round(size * k * 100) / 100;
+  if (!Array.isArray(size)) return size; // legacy stop function — leave alone
+  const head = size[0];
+  if (head === 'interpolate' || head === 'interpolate-hcl' || head === 'interpolate-lab') {
+    // ['interpolate', interpolation, input, stop, out, stop, out, …]
+    const out = size.slice(0, 3);
+    for (let i = 3; i < size.length; i += 2) out.push(size[i], scaleTextSize(size[i + 1], k));
+    return out;
+  }
+  if (head === 'step') {
+    // ['step', input, out0, stop, out, stop, out, …]
+    const out = ['step', size[1], scaleTextSize(size[2], k)];
+    for (let i = 3; i < size.length; i += 2) out.push(size[i], scaleTextSize(size[i + 1], k));
+    return out;
+  }
+  return ['*', k, size]; // not zoom-driven at the top level, so this is safe
+}
+
 async function loadStyle(key) {
   if (!styles[key]) {
-    styles[key] = await (await fetch(`style-${key}.json`)).json();
+    const style = await (await fetch(`style-${key}.json`)).json();
+    for (const layer of style.layers) {
+      const size = layer.layout && layer.layout['text-size'];
+      if (size === undefined) continue;
+      const k = LABEL_SCALE_BY_LAYER[layer.id] ?? LABEL_SCALE;
+      layer.layout['text-size'] = scaleTextSize(size, k);
+    }
+    const byId = new Map(style.layers.map(l => [l.id, l]));
+    for (const [target, source] of Object.entries(LABEL_PAINT_FROM)) {
+      const dst = byId.get(target), src = byId.get(source);
+      if (!dst || !src || !src.paint) continue;
+      dst.paint = { ...dst.paint };
+      for (const key of BORROWED_TEXT_PAINT) {
+        if (src.paint[key] !== undefined) dst.paint[key] = src.paint[key];
+      }
+    }
+    styles[key] = style; // cached, so neither pass is applied twice
   }
   return styles[key];
 }

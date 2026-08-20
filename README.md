@@ -109,6 +109,39 @@ Tiles are [Thunderforest outdoors-v2](https://www.thunderforest.com/docs/thunder
 vector tiles (OpenStreetMap data). The API key baked into the style JSON is a
 usage-limited free-tier key; regenerate with your own if needed.
 
+**Label size is not baked into the style files.** `LABEL_SCALE` in `index.html`
+(currently `1.25`) is applied to every symbol layer's `text-size` in
+`loadStyle()`, so it survives regenerating the style and cannot drift between the
+default and high-contrast variants. `scaleTextSize()` walks into `interpolate`
+and `step` expressions and scales their output stops rather than wrapping the
+whole value in `['*', k, …]` — a zoom-driven expression has to be the outermost
+expression of a layout property, so wrapping one makes the style fail validation
+and the map never loads.
+
+`LABEL_SCALE_BY_LAYER` overrides it per layer. `label-road-minor` is at `1.5`,
+because the style gives minor roads the smallest sizes of anything on the map
+(9-12 px, against 10-17 for primary roads), so scaling everything equally left
+residential street names the hardest labels to read. Raising a size trades away
+some coverage: bigger labels collide sooner, so a few names appear a zoom level
+later than before. `label-cycleway` (8-12 px) is the other candidate if pathway
+names ever need the same treatment.
+
+`LABEL_PAINT_FROM` does the same for label colour: `label-road-minor` borrows
+`text-color` and the halo from `label-road-secondary`, because minor-road labels
+are the palest text on the map (`#9e968a` in the default style, `#999999` in high
+contrast, against `#6a6258`) with a thinner halo as well. The values are copied
+from the sibling layer rather than hardcoded, so each variant keeps its own
+palette.
+
+Note this only affects the **labels**. The road lines themselves still grade by
+class — `road-casing-minor` is `#aca496` against `#8a8375` for secondary — which
+is `street-contrast.mjs`'s territory.
+
+All three constants cover the basemap labels only. The overlays drawn on top of the
+map — `.time-pill` markers and `.maplibregl-popup-content` — keep their own sizes
+in CSS and are deliberately left at the page's scale, as are the header, side
+panel and footer.
+
 ### Regenerating the routes
 
 Routes are computed by the public [BRouter](https://brouter.de) instance using
