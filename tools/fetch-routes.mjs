@@ -46,100 +46,37 @@ const DOWNTOWN = [-75.696914, 45.419324]; // Laurier Ave W & O'Connor St
 const SPLIT = [-75.63992, 45.43497];  // corner where the outbound leg turns north
 const REJOIN = [-75.64834, 45.43224]; // on the pathway, ~30 m from the requested point
 
-// Where the Findlay Creek route's two directions part company. Unlike Vanier
-// there is no rejoin point: from here the two legs run separately all the way
-// in, and only meet again at DOWNTOWN.
-const FC_SPLIT = [-75.695193, 45.381808]; // Rideau River footbridge
-
-// Barrhaven's two directions part company for a short stretch by the new
-// library. Named for where the ends sit rather than for the ride order: going to
-// work the pair is ridden west-to-east and going home east-to-west, so calling
-// either end "the split" would read backwards in one of the two directions.
-const BAR_EAST = [-75.709458, 45.415036]; // by the new library
-const BAR_WEST = [-75.710677, 45.414039]; // ~150 m southwest, where they meet again
-
 // Barrhaven and Stittsville run the same way from here in, so the approach east
 // of this point is defined once. Both corridors already passed through it before
 // they were joined up, so neither approach had to move.
 const BAYVIEW_JOIN = [-75.722161, 45.409803]; // west end of the Bayview pathway link
 
 /**
- * The shared run from BAYVIEW_JOIN to downtown, including the one-way pair by the
- * new library. A function rather than a constant so each corridor gets its own
- * arrays — the pipeline reverses `home` geometry in place, and two corridors
- * sharing one array would reverse it twice.
+ * The shared run from BAYVIEW_JOIN to downtown, ridden the same way in both
+ * directions. A function rather than a constant so each corridor gets its own
+ * arrays and neither can reach the other's geometry.
  */
 const bayviewToDowntown = () => [
-  {
-    points: [
-      BAYVIEW_JOIN,
-      [-75.719523, 45.411525], // MUP by Bayview station
-      // Four turns on the paved path just west of Booth St. Unaided the router
-      // takes a line ~10-15 m north of here that alternates between roadway and
-      // pathway; these keep it on the path, which OSM tags highway=path with
-      // paving stones, so the whole stretch reads car-free.
-      [-75.714554, 45.413586],
-      [-75.714442, 45.413521],
-      [-75.713703, 45.413709],
-      [-75.713720, 45.413847],
-      [-75.710894, 45.414423], // cut through towards the Bayview MUP
-      BAR_WEST,
-    ],
-  },
-  {
-    // To work, part one: the spur that drops off the pathway to cross Empress
-    // Ave, shared with traffic, so it draws thin and earns no car-free credit.
-    //
-    // Both outbound parts are written suburb-first like every segment, so they
-    // read west-to-east; the coordinates were supplied from the library end
-    // outward, which is the reverse. They are drawn from these points rather than
-    // routed because the paths here are being rebuilt and OSM does not have them
-    // yet — BRouter detoured ~300 m around the missing links, 106 m of it along a
-    // `bicycle=no` footway. Drop `literal` on all three once the data catches up.
-    dir: 'towork',
-    literal: true,
-    safety: 'road',
-    points: [
-      BAR_WEST,
-      [-75.710784, 45.413924],
-      [-75.710613, 45.413733],
-    ],
-  },
-  {
-    // To work, part two: the protected climb back up to the library. Shares its
-    // first point with part one above, so the line does not gap.
-    dir: 'towork',
-    literal: true,
-    safety: 'carfree',
-    points: [
-      [-75.710613, 45.413733],
-      [-75.709778, 45.414636],
-      BAR_EAST,
-    ],
-  },
-  {
-    // Homeward: also written west-to-east even though the ride goes the other
-    // way. The script reverses it on output, and that reversal is what makes the
-    // homeward arrows point homeward. Shared with traffic the whole way, unlike
-    // the outbound leg, so it draws at the thinnest width.
-    dir: 'home',
-    literal: true,
-    safety: 'road',
-    points: [
-      BAR_WEST,
-      [-75.710196, 45.414441],
-      [-75.709683, 45.415096],
-      BAR_EAST,
-    ],
-  },
-  {
-    points: [
-      BAR_EAST,
-      [-75.70723, 45.41590], // path along Tech Wall Dog Park (Bronson/Slater to Laurier)
-      [-75.70510, 45.41599], // Laurier Ave separated cycle track
-      DOWNTOWN,
-    ],
-  },
+  [-75.719523, 45.411525], // MUP by Bayview station
+  // Four turns on the paved path just west of Booth St. Unaided the router
+  // takes a line ~10-15 m north of here that alternates between roadway and
+  // pathway; these keep it on the path, which OSM tags highway=path with
+  // paving stones, so the whole stretch reads car-free.
+  [-75.714554, 45.413586],
+  [-75.714442, 45.413521],
+  [-75.713703, 45.413709],
+  [-75.713720, 45.413847],
+  [-75.711421, 45.415627], // MUP going towards pooleys bridge
+  // Mid-block on the Commissioner St roadway. The obvious point a little further
+  // north sits closer to the east sidewalk than to the street, and BRouter took
+  // it literally: it climbed 90 m past the junction to find a crossing, then came
+  // back down 175 m of `highway=footway`. One via on the carriageway instead
+  // keeps the whole block on the street.
+  [-75.709468, 45.416144], // Commissioner St
+  [-75.708885, 45.416120], // MUP on Albert by Commissioner st
+  [-75.70723, 45.41590], // path along Tech Wall Dog Park (Bronson/Slater to Laurier)
+  [-75.70510, 45.41599], // Laurier Ave separated cycle track
+  DOWNTOWN,
 ];
 
 const CORRIDORS = [
@@ -165,8 +102,10 @@ const CORRIDORS = [
       [-75.64002, 45.45753], // south of airport
       [-75.64901, 45.45812], // west of airport
       [-75.67229, 45.45716], // right before river house
-      [-75.69869, 45.42321], // Wellington and occonor
-      DOWNTOWN,
+      [-75.692892, 45.424716], // just past rideau street
+      [-75.688458, 45.422525], // East MUP canal crossing over Colonel By
+      [-75.687680, 45.422979], // King Edward intersection
+      [-75.696955, 45.419474], // Downtown west bound bike lane
     ],
   },
   {
@@ -189,7 +128,7 @@ const CORRIDORS = [
       [-75.683586, 45.420385], // corktown foodbridge
       [-75.685627, 45.420732], // west side canal MUP
       [-75.690204, 45.422572], // Laurier on ramp by canal
-      DOWNTOWN
+      [-75.696955, 45.419474], // Downtown west bound bike lane
     ],
   },
   {
@@ -212,7 +151,7 @@ const CORRIDORS = [
       [-75.633516, 45.419068], // multi-use pathway (keeps it off the intersection to the south)
       [-75.634724, 45.419118], // bike crossing at the intersection just west
       [-75.66527, 45.41254], // Hurdman
-      DOWNTOWN,
+      [-75.696955, 45.419474], // Downtown west bound bike lane
         ],
   },
   {
@@ -222,18 +161,14 @@ const CORRIDORS = [
     desc_en: 'Trans Canada Trail through Bells Corners, joining the Watts Creek Pathway',
     desc_fr: 'Sentier transcanadien via Bells Corners, rejoignant le sentier du ruisseau Watts',
     color: '#911EB4',
-    // Joins the Barrhaven alignment at Bayview and shares it in, one-way pair
-    // included (see `bayviewToDowntown`).
-    segments: [
-      {
-        points: [
-          [-75.911035, 45.264296], //Gouldberg rec center
-          [-75.848226, 45.317134], // Mup near robertson going north
-          [-75.861645, 45.341033], // Mup near Wesley Clover Park
-          [-75.754068, 45.395383], // Scott St
-          BAYVIEW_JOIN,
-        ],
-      },
+    // Joins the Barrhaven alignment at Bayview and shares it in
+    // (see `bayviewToDowntown`).
+    points: [
+      [-75.911035, 45.264296], //Gouldberg rec center
+      [-75.848226, 45.317134], // Mup near robertson going north
+      [-75.861645, 45.341033], // Mup near Wesley Clover Park
+      [-75.754068, 45.395383], // Scott St
+      BAYVIEW_JOIN,
       ...bayviewToDowntown(),
     ],
   },
@@ -254,7 +189,7 @@ const CORRIDORS = [
       [-75.717616, 45.418043], // Mup behind war museum 
       [-75.701733, 45.425875], // Mup behind Parliament 
       [-75.690204, 45.422572], // Laurier on ramp by canal 
-      DOWNTOWN
+      [-75.696955, 45.419474], // Downtown west bound bike lane
     ],
   },
   {
@@ -275,7 +210,7 @@ const CORRIDORS = [
       [-75.679566, 45.400944], // landsdowne
       [-75.680868, 45.418411], // canal bend
       [-75.689719, 45.422542], // laurier
-      DOWNTOWN,
+      [-75.696955, 45.419474], // Downtown west bound bike lane
     ],
   },
   {
@@ -285,27 +220,23 @@ const CORRIDORS = [
     desc_en: 'From Strandherd north along the Woodroffe Avenue pathway, then Albert Street to the Laurier bike lane',
     desc_fr: 'De Strandherd vers le nord par le sentier de l’avenue Woodroffe, puis la rue Albert jusqu’à la bande cyclable Laurier',
     color: '#F58231',
-    // Shares everything from Bayview in with Stittsville, including the one-way
-    // pair by the new library (see `bayviewToDowntown`).
-    segments: [
-      {
-        points: [
-          [-75.730999, 45.281795], // Stinton park near Berrigan dr
-          [-75.727145, 45.292025], // near longfields on MUP
-          [-75.730717, 45.298396], // near fallowfield on MUP
-          [-75.735882, 45.307277], // Woodroffe Ave corridor (south) — keeps route off Prince of Wales
-          [-75.746076, 45.325685], // Nepean Sportsplex
-          [-75.742834, 45.326941], // Nepean Sportsplex on MUP further down
-          [-75.744826, 45.330082], // Nepean Sportsplex hunt club crossing
-          [-75.727046, 45.346903], // Woodroffe Ave corridor (north)
-          [-75.732923, 45.357044], // capilano
-          [-75.724025, 45.360236], // Buffalo Cir
-          [-75.718841, 45.364266], // Deer Park road
-          [-75.715937, 45.369262], // Malibu Terrace
-          [-75.715320, 45.369688], // protected bike lane on Fisher
-          BAYVIEW_JOIN,
-        ],
-      },
+    // Shares everything from Bayview in with Stittsville
+    // (see `bayviewToDowntown`).
+    points: [
+      [-75.730999, 45.281795], // Stinton park near Berrigan dr
+      [-75.727145, 45.292025], // near longfields on MUP
+      [-75.730717, 45.298396], // near fallowfield on MUP
+      [-75.735882, 45.307277], // Woodroffe Ave corridor (south) — keeps route off Prince of Wales
+      [-75.746076, 45.325685], // Nepean Sportsplex
+      [-75.742834, 45.326941], // Nepean Sportsplex on MUP further down
+      [-75.744826, 45.330082], // Nepean Sportsplex hunt club crossing
+      [-75.727046, 45.346903], // Woodroffe Ave corridor (north)
+      [-75.732923, 45.357044], // capilano
+      [-75.724025, 45.360236], // Buffalo Cir
+      [-75.718841, 45.364266], // Deer Park road
+      [-75.715937, 45.369262], // Malibu Terrace
+      [-75.715320, 45.369688], // protected bike lane on Fisher
+      BAYVIEW_JOIN,
       ...bayviewToDowntown(),
     ],
   },
@@ -318,65 +249,27 @@ const CORRIDORS = [
     desc_en: 'Through Findlay Creek to Albion Road, then the Sawmill Creek Pathway and the Rideau Canal',
     desc_fr: 'À travers Findlay Creek jusqu’au chemin Albion, puis le sentier du ruisseau Sawmill et le canal Rideau',
     color: '#000075',
-    // Ridden differently each way through the Carleton campus area, so it is
-    // defined as segments rather than one `points` array (see "Directional
-    // segments" in the header comment).
-    segments: [
-      {
-        points: [
-          [-75.604132, 45.315828], // start Dragonfly Park
-          [-75.607717, 45.315648], // spartina st
-          [-75.611031, 45.315014], // diamond jubilee park
-          [-75.614645, 45.313090], // creekview way
-          [-75.616217, 45.312538], // creekview way further down
-          [-75.618419, 45.314016], // bunchberry way
-          [-75.619606, 45.313533], // cut through towards Albion
-          [-75.624703, 45.316483], // Quinn road
-          [-75.684639, 45.373423], // Brookfield MUP
-          [-75.693516, 45.372390], // hogs back
-          [-75.699552, 45.377657], // MUP near Vincent Massey
-          FC_SPLIT,
-        ],
-      },
-      {
-        // To work: north up University Dr through the campus, over Bronson at
-        // the north crossing, then up through the Glebe on residential streets.
-        dir: 'towork',
-        points: [
-          FC_SPLIT,
-          [-75.695649, 45.387878], // University Dr before the roundabout
-          [-75.695876, 45.388740], // University Dr at the roundabout
-          [-75.696155, 45.388800], // University Dr on MUP left side of roundabout
-          [-75.695847, 45.391942], // north crossing at Bronson
-          [-75.695485, 45.392358], // Bronson protected bike lane
-          [-75.694261, 45.395941], // Findlay Ave
-          [-75.692863, 45.399259], // Craig St
-          // Mid-way along the protected track beside Glebe Ave between Bank St
-          // and O'Connor St — OSM way 1420984002, highway=cycleway, oneway
-          // eastbound, so it suits the outbound leg only. One via is exactly
-          // right here: with none the router takes Clemow Ave a block north,
-          // which has no cycling infrastructure, and pinning both ends as well
-          // makes it double back 120 m to enter the one-way from the far end.
-          [-75.686700, 45.406296],
-          [-75.688455, 45.409513], // O'Connor Bikeway
-          DOWNTOWN,
-        ],
-      },
-      {
-        // Homeward: the corridor's original alignment, east of the campus and
-        // through Brewer Park, then the canal pathway. Written suburb-first like
-        // every `home` segment, so it reads south-to-north even though the ride
-        // goes the other way.
-        dir: 'home',
-        points: [
-          FC_SPLIT,
-          [-75.693244, 45.386106], // east of Carleton campus
-          [-75.688308, 45.388219], // Brewers park
-          [-75.691270, 45.393089], // Seneca st
-          [-75.687396, 45.421497], // canal pathway near downtown
-          DOWNTOWN,
-        ],
-      },
+    // One line, ridden the same way in both directions. The corridor used to
+    // split through the Carleton campus area, but two parallel lines there are
+    // hard to read on the poster, so the homeward alignment now stands for both.
+    points: [
+      [-75.604132, 45.315828], // start Dragonfly Park
+      [-75.607717, 45.315648], // spartina st
+      [-75.611031, 45.315014], // diamond jubilee park
+      [-75.614645, 45.313090], // creekview way
+      [-75.616217, 45.312538], // creekview way further down
+      [-75.618419, 45.314016], // bunchberry way
+      [-75.619606, 45.313533], // cut through towards Albion
+      [-75.624703, 45.316483], // Quinn road
+      [-75.684639, 45.373423], // Brookfield MUP
+      [-75.693516, 45.372390], // hogs back
+      [-75.699552, 45.377657], // MUP near Vincent Massey
+      [-75.695193, 45.381808], // Rideau River footbridge
+      [-75.693244, 45.386106], // east of Carleton campus
+      [-75.688308, 45.388219], // Brewers park
+      [-75.691270, 45.393089], // Seneca st
+      [-75.687396, 45.421497], // canal pathway near downtown
+      [-75.696955, 45.419474], // Downtown west bound bike lane
     ],
   },
   {
@@ -471,7 +364,7 @@ const CORRIDORS = [
           REJOIN,
           [-75.657432, 45.431567], // via
           [-75.670478, 45.430130], // via
-          DOWNTOWN,
+          [-75.696955, 45.419474], // Downtown west bound bike lane
         ],
       },
     ],
@@ -1067,8 +960,8 @@ for (const c of CORRIDORS) {
 // In the all-routes view, directional arrows read as belonging to whichever line
 // is drawn on top. Where a one-way section shares its alignment with another
 // corridor that is drawn later, the arrows appear to describe that corridor
-// instead — Findlay Creek / South Keys under Greenboro on O'Connor St being the
-// case that prompted this.
+// instead — the retired Findlay Creek split under Greenboro on O'Connor St being
+// the case that prompted this.
 //
 // Only a route drawn *later* can do this, since that is the one whose colour the
 // reader sees; where a one-way section is drawn on top of its neighbours its own

@@ -1,14 +1,14 @@
 [
  {
   "route": "orleans-south",
-  "lon": -75.46509,
-  "lat": 45.45936,
+  "lon": -75.46613,
+  "lat": 45.4626,
   "minutes": 105
  },
  {
   "route": "orleans-south",
-  "lon": -75.47933,
-  "lat": 45.49125,
+  "lon": -75.47825,
+  "lat": 45.49504,
   "minutes": 90
  },
  {
@@ -37,14 +37,14 @@
  },
  {
   "route": "orleans-south",
-  "lon": -75.69116,
-  "lat": 45.44481,
+  "lon": -75.69308,
+  "lat": 45.44389,
   "minutes": 15
  },
  {
   "route": "orleans",
-  "lon": -75.5339,
-  "lat": 45.48619,
+  "lon": -75.53361,
+  "lat": 45.48536,
   "minutes": 75
  },
  {
@@ -67,14 +67,14 @@
  },
  {
   "route": "orleans",
-  "lon": -75.69695,
-  "lat": 45.43803,
+  "lon": -75.6966,
+  "lat": 45.43858,
   "minutes": 15
  },
  {
   "route": "blackburn-hamlet",
-  "lon": -75.61428,
-  "lat": 45.41889,
+  "lon": -75.61306,
+  "lat": 45.41854,
   "minutes": 30
  },
  {
@@ -127,8 +127,8 @@
  },
  {
   "route": "stittsville",
-  "lon": -75.73514,
-  "lat": 45.40334,
+  "lon": -75.73168,
+  "lat": 45.40481,
   "minutes": 15
  },
  {
@@ -193,8 +193,8 @@
  },
  {
   "route": "barrhaven",
-  "lon": -75.73373,
-  "lat": 45.28824,
+  "lon": -75.72736,
+  "lat": 45.29117,
   "minutes": 75
  },
  {
@@ -205,21 +205,27 @@
  },
  {
   "route": "barrhaven",
-  "lon": -75.72725,
-  "lat": 45.34718,
+  "lon": -75.72895,
+  "lat": 45.34955,
   "minutes": 45
  },
  {
   "route": "barrhaven",
-  "lon": -75.71665,
-  "lat": 45.37189,
+  "lon": -75.71749,
+  "lat": 45.3732,
   "minutes": 30
  },
  {
   "route": "barrhaven",
-  "lon": -75.71091,
-  "lat": 45.40014,
+  "lon": -75.71298,
+  "lat": 45.4031,
   "minutes": 15
+ },
+ {
+  "route": "findlay-creek",
+  "lon": -75.60921,
+  "lat": 45.31532,
+  "minutes": 75
  },
  {
   "route": "findlay-creek",
@@ -229,20 +235,20 @@
  },
  {
   "route": "findlay-creek",
-  "lon": -75.6529,
-  "lat": 45.34928,
+  "lon": -75.66275,
+  "lat": 45.36052,
   "minutes": 45
  },
  {
   "route": "findlay-creek",
-  "lon": -75.68423,
-  "lat": 45.37399,
+  "lon": -75.69602,
+  "lat": 45.37214,
   "minutes": 30
  },
  {
   "route": "findlay-creek",
-  "lon": -75.69612,
-  "lat": 45.39516,
+  "lon": -75.68293,
+  "lat": 45.42002,
   "minutes": 15
  },
  {
@@ -289,8 +295,8 @@
  },
  {
   "route": "vanier",
-  "lon": -75.66041,
-  "lat": 45.43134,
+  "lon": -75.65988,
+  "lat": 45.43138,
   "minutes": 15
  }
 ]

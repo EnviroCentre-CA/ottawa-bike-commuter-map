@@ -17,16 +17,16 @@ possible:
 
 | Route                         | Distance | Time    | Car-free |
 | ----------------------------- | -------- | ------- | -------- |
-| Barrhaven                     | 22.1 km  | 78 min  | 64%      |
-| Blackburn Hamlet / Gloucester | 17.7 km  | 66 min  | 58%      |
-| Findlay Creek / South Keys    | 19.7 km  | 72 min  | 72%      |
+| Barrhaven                     | 22.2 km  | 78 min  | 64%      |
+| Blackburn Hamlet / Gloucester | 17.7 km  | 66 min  | 59%      |
+| Findlay Creek / South Keys    | 21.3 km  | 76 min  | 82%      |
 | Greenboro                     | 12.4 km  | 47 min  | 69%      |
-| Kanata North                  | 27.8 km  | 94 min  | 88%      |
-| Nepean                        | 18.9 km  | 65 min  | 92%      |
-| Orléans                      | 23.2 km  | 82 min  | 81%      |
-| Orléans South                | 30.4 km  | 107 min | 71%      |
-| Pineview                      | 10 km    | 36 min  | 65%      |
-| Stittsville / Kanata South    | 31.4 km  | 117 min | 98%      |
+| Kanata North                  | 27.8 km  | 94 min  | 89%      |
+| Nepean                        | 18.9 km  | 64 min  | 93%      |
+| Orléans                      | 23.2 km  | 81 min  | 82%      |
+| Orléans South                | 30.8 km  | 108 min | 73%      |
+| Pineview                      | 10 km    | 35 min  | 67%      |
+| Stittsville / Kanata South    | 31.5 km  | 117 min | 97%      |
 
 These figures change whenever a corridor is edited, and `npm run routes` prints the
 current set — treat the table as a snapshot rather than the source of truth.
@@ -35,12 +35,10 @@ A separate South Keys / Hunt Club corridor was retired: Findlay Creek / South Ke
 passes within 80 m of the Juno Beach bridge on the Sawmill Creek Pathway, so it
 already served the same riders over almost the same alignment.
 
-Figures are for the ride **to** downtown. Four corridors are ridden differently
-each way. Blackburn Hamlet / Gloucester (17.1 km / 64 min home) and Findlay Creek
-/ South Keys (21.3 km / 76 min home) diverge for kilometres; Barrhaven (22 km
-home) and Stittsville / Kanata South (31.3 km / 116 min home) share one short
-pair by the new library — see below. Times come from the model described under "Ride time estimates", not from
-distance alone.
+Figures are for the ride **to** downtown. One corridor is ridden differently each
+way: Blackburn Hamlet / Gloucester (17.1 km / 64 min home) diverges either side
+of St-Laurent Boulevard — see below. Times come from the model described under
+"Ride time estimates", not from distance alone.
 
 Other features:
 
@@ -53,21 +51,18 @@ Other features:
   See "Ride time estimates" below.
 - **Some sections are one-way.** Where the better ride differs by direction,
   the route splits into two lines with **arrows showing which way to ride**.
-  Blackburn Hamlet / Gloucester does this either side of St-Laurent Boulevard:
-  outbound it swings north via Guy Avenue, homeward it stays on McArthur Avenue.
-  Findlay Creek / South Keys splits at the Rideau River footbridge and the two legs stay
-  apart the rest of the way in: outbound it climbs University Drive, crosses
-  Bronson Avenue and continues through the Glebe on residential streets, while
-  homeward it follows the pathways east of the campus through Brewer Park and
-  then the canal. The outbound leg is pinned to both ends of the protected
-  stretch of Glebe Avenue, because unaided the router prefers Clemow Avenue a
-  block north, which has no cycling infrastructure at all. Barrhaven and
-  Stittsville / Kanata South share a much shorter pair by the new library — 211 m
-  out, 160 m back — which is being rebuilt, so those legs are drawn rather than
-  routed (see "Sections under construction"). Only the outbound climb there is
-  car-free; the spur crossing Empress Avenue and the whole homebound leg are
-  shared with traffic. Arrows appear from zoom 12 in, and the side panel explains
-  them when such a route is selected.
+  Blackburn Hamlet / Gloucester is the only corridor doing this now, either side
+  of St-Laurent Boulevard: outbound it swings north via Guy Avenue, homeward it
+  stays on McArthur Avenue. Arrows appear from zoom 12 in, and the side panel
+  explains them when such a route is selected.
+
+  **Prefer one line where you can.** Findlay Creek / South Keys ran two legs for
+  kilometres from the Rideau River footbridge in, and Barrhaven and Stittsville /
+  Kanata South shared a short pair by the new library; both read fine on screen
+  and poorly on the poster, where there is no zoom and no selection to separate a
+  pair. Both are now single bidirectional lines. The machinery below stays because
+  Blackburn Hamlet / Gloucester still needs it, but reach for it only when the two
+  directions genuinely cannot share an alignment.
 - Selecting a route (from the list or by clicking its line) isolates it and
   zooms to it; clicking the selected route again describes that section —
   including which direction it is for, on a one-way section.
@@ -159,10 +154,12 @@ Two things worth knowing when editing corridors:
 - Where routes overlap, the one appearing **later** in the `CORRIDORS` array is
   drawn on top.
 - Corridors that share an alignment should share its definition. `bayviewToDowntown()`
-  holds everything from `BAYVIEW_JOIN` to downtown, and Barrhaven and Stittsville
-  both spread it into their `segments`, so the two cannot drift apart. It is a
-  function, not a constant: the pipeline reverses `home` geometry in place, so two
-  corridors sharing one array would reverse it twice.
+  holds the 2.8 km from `BAYVIEW_JOIN` to downtown, and Barrhaven and Stittsville
+  both spread it into their `points`, so the two cannot drift apart. It is a
+  function, not a constant, so each corridor gets its own arrays and nothing
+  downstream can reach one corridor's geometry through the other's — which
+  mattered when the shared run held a `home` segment, since the pipeline reverses
+  that geometry in place.
 - `MANUAL_TRIMS` removes individual points from the drawn line to tidy up
   crossing artifacts. It is cosmetic only and does not change the routing —
   read the comments there before adding a box, as it is easy to delete a real
@@ -204,9 +201,11 @@ that bit Glebe Avenue:
 
 Glebe Avenue between Bank Street and O'Connor Street is the worked example. The
 roadway carries `cycleway:right=lane`, which classifies as a painted lane, while
-the real protected track beside it is a separate `highway=cycleway` way. The
-corridor pins one via to that way, and the section then classifies as car-free
-with no special handling.
+the real protected track beside it is a separate `highway=cycleway` way (OSM way
+1420984002, one-way eastbound). Pinning one via to that way made the section
+classify as car-free with no special handling. No corridor rides it today — it
+was on the retired Findlay Creek outbound leg — but it is the pattern to reach
+for.
 
 #### Ride time estimates
 
@@ -356,26 +355,29 @@ Things to get right:
   and the map then draws opposing arrows along a path that is really two-way. An
   interim version of Findlay Creek rejoined at the downtown end of the canal and
   double-drew 4.8 km of a 6.2 km branch that way. A corridor whose two legs
-  genuinely differ the whole distance needs no rejoin at all — Findlay Creek now
-  runs both legs from the split straight to `DOWNTOWN`.
+  genuinely differ the whole distance needs no rejoin at all — both legs can run
+  from the split straight to `DOWNTOWN`.
 - Only directional segments get a `dir` property in the output, and the map's
   arrow layer keys off `dir`. Shared sections stay unmarked.
 - **A stretch both directions use is not one-way.** A `segments` split usually
-  leaves the two legs sharing the path for a while either side of the divergence:
-  Findlay Creek / South Keys runs on the same pathway for about 400 m north of the
-  Rideau River footbridge before the legs part. Marking that as one-way put
-  opposing arrows on top of each other. So the build tests each directional
+  leaves the two legs sharing the path for a while either side of the divergence —
+  the Findlay Creek split, before it was retired, ran on the same pathway for
+  about 400 m north of the Rideau River footbridge before the legs really parted.
+  Marking that as one-way put opposing arrows on top of each other. So the build tests each directional
   vertex against the corridor's **own opposite leg** (again within
   `SHADOW_TOLERANCE_M`) and drops `dir` outright on the runs that match — not just
   the arrows, since nothing downstream should describe those stretches as one-way,
   the section popup included. Arrows then begin only where the legs are genuinely
-  apart, about 30 m in Findlay Creek's case.
+  apart — which costs Blackburn Hamlet / Gloucester 263 m of arrows at its
+  junction ends.
 - **Arrows hide where another route is drawn on top.** At full strength every
   corridor is equally visible, so arrows on a one-way section running underneath
   another route read as describing *that* route — Findlay Creek / South Keys
-  under Greenboro along O'Connor Street being the case that prompted this. Only a
+  under Greenboro along O'Connor Street having been the case that prompted this. Only a
   corridor drawn **later** can do this, since that is the one whose colour the
   reader sees; a one-way section drawn on top of its neighbours keeps its arrows.
+  No corridor is shadowed at present — Blackburn Hamlet / Gloucester, the only
+  directional one left, runs where nothing is drawn over it.
 
   So each directional feature is split into runs of three states, strongest first:
   `both` (the corridor's own other leg is here too — `dir` removed), `shadowed`
@@ -395,11 +397,10 @@ Things to get right:
 
   Every run prints its share at the end of a run, and a corridor whose one-way
   section is *entirely* shadowed is called out — it would show no arrows at all
-  until selected, which is worth knowing rather than discovering on the map.
-  Stittsville / Kanata South trips that warning by design: it shares Barrhaven's
-  pair exactly, and Barrhaven is drawn on top, so only one set of arrows appears
-  in the overview instead of two identical sets stacked. Selecting either route
-  brings its own arrows back.
+  until selected, which is worth knowing rather than discovering on the map. When
+  Barrhaven and Stittsville shared a pair by the new library, Stittsville tripped
+  that warning by design: the two pairs were identical and Barrhaven was drawn on
+  top, so the overview showed one set of arrows instead of two stacked.
 
   Taking draw order into account is what makes this usable rather than
   destructive. It was added when Barrhaven's outbound leg ran along Albert Street
@@ -420,25 +421,29 @@ of being sent to BRouter:
   dir: 'towork',
   literal: true,
   safety: 'carfree',
-  points: [BAR_WEST, /* ... */ BAR_EAST],
+  points: [SPLIT, /* ... */ REJOIN],
 }
 ```
 
-Use it only where OSM cannot describe the route yet. Barrhaven's pair by the new
-library is the case: the paths there are being rebuilt, the connections are not
-mapped, and the router detoured roughly 300 m around the missing links — 106 m of
-it along a `bicycle=no` footway. Routing produced a line nobody could ride, so
-the coordinates are drawn as given.
+Use it only where OSM cannot describe the route yet. **No corridor uses it at
+present** — the mechanism is kept for the next time OSM lags construction, and
+the guidance below is what it cost when it was in use.
+
+Barrhaven's retired pair by the new library was the case: the paths there are
+being rebuilt, the connections were not mapped, and the router detoured roughly
+300 m around the missing links — 106 m of it along a `bicycle=no` footway.
+Routing produced a line nobody could ride, so the coordinates were drawn as
+given.
 
 What a literal segment gives up, and why that is acceptable here:
 
 - **`safety` must be stated**, since there are no way tags to infer it from. It
   therefore reflects a judgement rather than data — keep these sections short so
   the judgement barely moves the car-free percentage. Only the outbound direction
-  feeds `carfree_pct`, and Barrhaven's outbound legs are 211 m of 22 km.
+  feeds `carfree_pct`, and Barrhaven's outbound legs were 211 m of 22 km.
 - **Split a leg into several literal segments to vary the class along it.** Give
   them the same `dir` and let consecutive ones share an endpoint; the pipeline
-  treats them as one direction. Barrhaven's outbound leg is two: 40 m of `road`
+  treats them as one direction. Barrhaven's outbound leg was two: 40 m of `road`
   for the spur across Empress Avenue, then 171 m of `carfree` climbing to the
   library.
 - **No signals or stop signs are charged.** Inventing controls to go with invented
