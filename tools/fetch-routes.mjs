@@ -164,7 +164,7 @@ const CORRIDORS = [
     // Joins the Barrhaven alignment at Bayview and shares it in
     // (see `bayviewToDowntown`).
     points: [
-      [-75.911035, 45.264296], //Gouldberg rec center
+      [-75.920091, 45.258599], //Village Square park near Stittsville main street
       [-75.848226, 45.317134], // Mup near robertson going north
       [-75.861645, 45.341033], // Mup near Wesley Clover Park
       [-75.754068, 45.395383], // Scott St
@@ -223,9 +223,7 @@ const CORRIDORS = [
     // Shares everything from Bayview in with Stittsville
     // (see `bayviewToDowntown`).
     points: [
-      [-75.730999, 45.281795], // Stinton park near Berrigan dr
-      [-75.727145, 45.292025], // near longfields on MUP
-      [-75.730717, 45.298396], // near fallowfield on MUP
+      [-75.746761, 45.275743], // Transitway MUP near Berrigan dr
       [-75.735882, 45.307277], // Woodroffe Ave corridor (south) — keeps route off Prince of Wales
       [-75.746076, 45.325685], // Nepean Sportsplex
       [-75.742834, 45.326941], // Nepean Sportsplex on MUP further down
@@ -234,7 +232,8 @@ const CORRIDORS = [
       [-75.732923, 45.357044], // capilano
       [-75.724025, 45.360236], // Buffalo Cir
       [-75.718841, 45.364266], // Deer Park road
-      [-75.715937, 45.369262], // Malibu Terrace
+      [-75.713751, 45.366173], // Deer Park/Fisher south west intersection
+      [-75.713489, 45.366539], // Deer Park/Fisher north east intersection
       [-75.715320, 45.369688], // protected bike lane on Fisher
       BAYVIEW_JOIN,
       ...bayviewToDowntown(),
