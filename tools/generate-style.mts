@@ -2,8 +2,9 @@
  * Generates the standalone map styles for the CSAP commuter map.
  *
  * Imports the style builder from the whereto.bike platform
- * (https://github.com/eljojo/bike-app-astro, AGPL-3.0), which must be
- * checked out as a sibling directory named `bike-app-astro-main`.
+ * (https://github.com/eljojo/bike-app-astro, AGPL-3.0), vendored at
+ * vendor/bike-app-astro/ — see the README there for the pinned commit and
+ * how to update it.
  *
  * The upstream style points tile requests at a server-side proxy
  * (/api/tiles/...). This wrapper swaps in direct Thunderforest URLs with
@@ -17,7 +18,7 @@ import {
   buildMapStyle,
   defaultBase, defaultCycling,
   hcBase, hcCycling,
-} from '../../bike-app-astro-main/scripts/build-map-style.ts';
+} from '../vendor/bike-app-astro/build-map-style.ts';
 
 const apiKey = process.argv[2] || process.env.THUNDERFOREST_API_KEY;
 if (!apiKey) {
