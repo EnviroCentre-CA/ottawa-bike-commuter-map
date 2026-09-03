@@ -14,6 +14,15 @@ tools/render-poster.mjs
 tools/export-map-image.mjs
 tools/export-legend-svg.mjs
 
+# Route sheet directions — a print deliverable like the posters. NOTE that
+# tools/corridors.mjs is NOT ignored: fetch-routes.mjs imports it, so the
+# published map does not build without it.
+directions.csv
+tools/export-directions.mjs
+
+# BRouter and Overpass responses, cached so reruns do not re-ask
+.cache/
+
 # Only referenced by the poster pipeline (the web map uses the woff2 files)
 fonts/mulish-var.ttf
 
@@ -25,3 +34,6 @@ package-lock.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Local maintainer reference (architecture / hosting notes) — deliberately not published
+ARCHITECTURE.local.html

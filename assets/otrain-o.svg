@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50.4213 50.0903" width="50.4213" height="50.0903" role="img" aria-label="O-Train">
+  <title>O-Train</title>
+  <!-- The red O isolated from assets/O-Train_logo.svg (path476), cropped to its
+       own bounding box. The two transforms of the source file - the PDF y-flip
+       matrix(1.25,0,0,-1.25,-41.30025,971.68837) and translate(54.0202,776.5507)
+       - are collapsed into one, then shifted so the glyph starts at 0,0.
+       Path data and fill (#e31b23) are byte-identical to the source. -->
+  <g transform="matrix(1.25,0,0,-1.25,25.225,0)">
+    <path d="m 0,0 -0.023,0 c -11.123,-0.063 -20.096,-9.024 -20.157,-20.149 0.061,-11.015 9.034,-19.975 20.157,-19.923 l 0.023,0 c 11.123,-0.052 20.094,8.908 20.157,19.923 C 20.094,-9.024 11.123,-0.063 0,0 m -0.264,-27.59 c -4.148,-0.055 -7.557,3.348 -7.437,7.441 -0.12,4.316 3.289,7.737 7.437,7.675 4.269,0.062 7.677,-3.359 7.677,-7.675 0,-4.093 -3.408,-7.496 -7.677,-7.441" style="fill:#e31b23;fill-opacity:1;fill-rule:nonzero;stroke:none"/>
+  </g>
+</svg>

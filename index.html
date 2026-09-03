@@ -374,6 +374,8 @@ const I18N = {
     onewayNote: 'This route splits in two for part of the way. Follow the arrows: one line is the ride <strong>to work</strong>, the other the ride <strong>home</strong>.',
     carFree: 'protected',
     sectionCarfree: 'Car-free section',
+    stationTransitway: 'Transitway Bus Station',
+    stationVia: 'VIA Rail Station',
     sectionLane: 'On-street bike lane section',
     sectionRoad: 'Section shared with car traffic',
     dirTowork: 'Ride this way to work (heading downtown)',
@@ -426,6 +428,8 @@ const I18N = {
     onewayNote: 'Ce trajet se divise en deux sur une partie du parcours. Suivez les flèches : un tracé correspond à l’<strong>aller au travail</strong>, l’autre au <strong>retour à la maison</strong>.',
     carFree: 'protégé',
     sectionCarfree: 'Section sans voitures',
+    stationTransitway: 'Station d’autobus du Transitway',
+    stationVia: 'Gare VIA Rail',
     sectionLane: 'Section sur bande cyclable',
     sectionRoad: 'Section partagée avec les voitures',
     dirTowork: 'À suivre à l’aller au travail (vers le centre-ville)',
@@ -470,6 +474,7 @@ let lang = localStorage.getItem('csap-lang')
 let highContrast = localStorage.getItem('csap-hc') === 'true';
 let selectedId = null;
 let routesData = null;
+let stationsData = null;
 const styles = {};
 
 function t(key) { return I18N[lang][key]; }
@@ -502,6 +507,7 @@ function applyI18n() {
   // guard this with map.getLayer() — that throws until the style arrives, and
   // applyI18n runs before setMapStyle in boot().
   updateTimePills();
+  updateStationLabels();
 }
 
 // ---------------------------------------------------------------------------
@@ -553,6 +559,18 @@ const LABEL_PAINT_FROM = {
 const BORROWED_TEXT_PAINT = ['text-color', 'text-halo-color', 'text-halo-width', 'text-halo-blur'];
 
 /**
+ * Basemap layers dropped in favour of layers of our own.
+ *
+ * The tiles' `railway-station` layer carries only `name` and `railway`, and
+ * `railway` is "station" for every feature — so it mixes the operating O-Train
+ * network with Stage 2 construction sites, VIA Rail, and Transitway stations,
+ * with no attribute that tells them apart and no way to filter by longitude in
+ * a style expression. stations.geojson states the 39 we want instead; see
+ * stationLayers(). Dropped here rather than hidden so nothing draws them.
+ */
+const HIDDEN_BASEMAP_LAYERS = new Set(['station-dot', 'station-label']);
+
+/**
  * Scale a `text-size` value, whatever form the style gives it in.
  *
  * The output values are scaled in place rather than the whole thing being
@@ -582,6 +600,7 @@ function scaleTextSize(size, k) {
 async function loadStyle(key) {
   if (!styles[key]) {
     const style = await (await fetch(`style-${key}.json`)).json();
+    style.layers = style.layers.filter(l => !HIDDEN_BASEMAP_LAYERS.has(l.id));
     for (const layer of style.layers) {
       const size = layer.layout && layer.layout['text-size'];
       if (size === undefined) continue;
@@ -624,6 +643,67 @@ function addArrowImage() {
   g.strokeStyle = '#ffffff'; g.lineWidth = 7.5; chevron(); g.stroke();
   g.strokeStyle = '#14294d'; g.lineWidth = 3.4; chevron(); g.stroke();
   map.addImage('dir-arrow', g.getImageData(0, 0, S, S));
+}
+
+/**
+ * The O-Train roundel, isolated from the official wordmark in
+ * assets/otrain-o.svg (see the comment in that file for how it was cropped).
+ *
+ * Drawn onto a white disc rather than used as-is. The brand mark is a ring with
+ * an open counter, so on its own a route line or a park fill would show through
+ * the middle of every station. The disc also fixes what the red is measured
+ * against: #e31b23 is 4.26:1 on the basemap background and 4.72:1 on white, but
+ * only 2.68:1 over water — below the 3:1 that WCAG 1.4.11 asks of non-text
+ * graphics. With white behind and a halo around it, the ratio is always 4.72:1
+ * whatever the icon lands on, which is why the mark keeps its brand red in the
+ * high-contrast style too.
+ */
+const OTRAIN_ASPECT = 50.0903 / 50.4213; // from the svg's viewBox
+
+/**
+ * How strongly the roundel is drawn. At 1 the mark is full OC Transpo red and
+ * pulls the eye off the routes, which are the subject of the map. The red is
+ * composited at this alpha over the *opaque* white disc rather than the layer
+ * being given an `icon-opacity`: that keeps the disc solid, so the contrast is
+ * still measured red-on-white whatever the icon lands on, instead of varying
+ * with the fill underneath. 0.75 lands on #ea545a — 3.55:1 against the disc
+ * and 3.20:1 against the basemap, both still over the 3:1 that WCAG 1.4.11
+ * asks of non-text graphics. Going below about 0.72 breaks that.
+ */
+const OTRAIN_TINT = 0.75;
+
+let otrainImage = null;
+
+function addStationImage() {
+  if (!otrainImage || map.hasImage('otrain-o')) return;
+  const S = 52;   // device px; pixelRatio 2 below, so 26 logical px
+  const PAD = 2;  // device px of white left visible around the ring
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = S;
+  const g = cv.getContext('2d');
+  g.beginPath();
+  g.arc(S / 2, S / 2, S / 2 - 0.5, 0, Math.PI * 2);
+  g.fillStyle = '#ffffff';
+  g.fill();
+  const w = S - 2 * PAD, h = w * OTRAIN_ASPECT;
+  g.globalAlpha = OTRAIN_TINT;
+  g.drawImage(otrainImage, PAD, (S - h) / 2, w, h);
+  g.globalAlpha = 1;
+  map.addImage('otrain-o', g.getImageData(0, 0, S, S), { pixelRatio: 2 });
+}
+
+/**
+ * Rasterising the svg needs it decoded first, so boot() awaits this before the
+ * style loads. A failure is not fatal: addStationImage() then registers
+ * nothing, the icon layer draws no icons, and the station labels still appear.
+ */
+function loadOtrainImage() {
+  return new Promise((resolve) => {
+    const im = new Image();
+    im.onload = () => resolve(im);
+    im.onerror = () => resolve(null);
+    im.src = 'assets/otrain-o.svg';
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -682,6 +762,131 @@ function casingFor(color) {
     .sort((a, b) => b.ratio - a.ratio)[0].c;
 }
 
+/**
+ * Transit station layers, drawn from stations.geojson.
+ *
+ * Three kinds, distinguished the way the data cannot be: `otrain` gets the red
+ * roundel, `transitway` and `via` share the basemap's own dark station dot and
+ * are told apart by an italic subtitle underneath.
+ *
+ * Nothing appears before z13, and no label before z14: at the city-wide zooms
+ * this map opens at, 39 markers read as the subject rather than as orientation,
+ * and the routes are the subject. VIA is held back one level further, to z14 —
+ * its Fallowfield station sits 97 m from the Transitway station of the same
+ * name, which is 3 px at z12 and 12 px at z14, so below that the two cannot
+ * both be legible. Their labels are anchored in opposite directions for the
+ * same reason: VIA above its dot, Transitway below.
+ *
+ * Sizes are final values, not scaled: LABEL_SCALE is applied in loadStyle() to
+ * the style file's own layers, and these are added afterwards. The numbers
+ * match the basemap station-label ramp with that 1.25 already folded in.
+ */
+const STATION_TEXT_SIZE = ['interpolate', ['linear'], ['zoom'], 12, 11.25, 14, 13.75, 18, 16.25];
+
+/** Dark station colour, per style variant — the value station-dot used. */
+function stationColour() { return highContrast ? '#1a1a1a' : '#2a2a3a'; }
+
+/**
+ * Two-line label: name, then the kind in italics. The italic face is already
+ * used by the basemap's natural-feature labels, so it is in the glyph set.
+ * Rebuilt on a language switch by updateStationLabels().
+ */
+function stationLabelField(kind) {
+  return ['format',
+    ['get', 'name'], {},
+    '\n', {},
+    t(kind === 'via' ? 'stationVia' : 'stationTransitway'),
+    { 'text-font': ['literal', ['NotoSans_Italic']], 'font-scale': 0.82 },
+  ];
+}
+
+function stationDotLayer(id, kind, minzoom) {
+  return {
+    id, type: 'circle', source: 'stations',
+    filter: ['==', ['get', 'kind'], kind],
+    minzoom,
+    paint: {
+      'circle-color': stationColour(),
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 12, 2.5, 14, 4, 18, 6],
+      'circle-stroke-width': 1.5,
+      'circle-stroke-color': '#ffffff',
+      'circle-opacity': 0.7,
+    },
+  };
+}
+
+function stationLabelLayer(id, kind, minzoom, above) {
+  return {
+    id, type: 'symbol', source: 'stations',
+    filter: ['==', ['get', 'kind'], kind],
+    minzoom,
+    layout: {
+      'text-field': stationLabelField(kind),
+      'text-font': ['NotoSans_Regular'],
+      'text-size': STATION_TEXT_SIZE,
+      'text-anchor': above ? 'bottom' : 'top',
+      'text-offset': [0, above ? -0.9 : 0.9],
+      'text-max-width': 9,
+    },
+    paint: {
+      'text-color': stationColour(),
+      'text-halo-color': '#ffffff',
+      'text-halo-width': 1.5,
+    },
+  };
+}
+
+function stationLayers() {
+  return [
+    stationDotLayer('stations-transitway-dot', 'transitway', 13),
+    stationDotLayer('stations-via-dot', 'via', 14),
+    {
+      // Overlap is allowed: a roundel suppressed by a neighbour would read as
+      // "no station here". The labels below it still collide normally.
+      id: 'stations-otrain',
+      type: 'symbol', source: 'stations',
+      filter: ['==', ['get', 'kind'], 'otrain'],
+      minzoom: 13,
+      layout: {
+        'icon-image': 'otrain-o',
+        'icon-size': ['interpolate', ['linear'], ['zoom'], 13, 0.6, 14, 0.72, 18, 0.9],
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
+      },
+    },
+    {
+      id: 'stations-otrain-label',
+      type: 'symbol', source: 'stations',
+      filter: ['==', ['get', 'kind'], 'otrain'],
+      minzoom: 14,
+      layout: {
+        'text-field': ['get', 'name'],
+        'text-font': ['NotoSans_Regular'],
+        'text-size': STATION_TEXT_SIZE,
+        'text-anchor': 'top',
+        'text-offset': [0, 1.0],
+        'text-max-width': 9,
+      },
+      paint: {
+        'text-color': stationColour(),
+        'text-halo-color': '#ffffff',
+        'text-halo-width': 1.5,
+      },
+    },
+    stationLabelLayer('stations-transitway-label', 'transitway', 14, false),
+    stationLabelLayer('stations-via-label', 'via', 14, true),
+  ];
+}
+
+/** Station label text is localised, so it is rebuilt on a language switch. */
+function updateStationLabels() {
+  if (!overlayReady) return;
+  for (const [id, kind] of [['stations-transitway-label', 'transitway'],
+                            ['stations-via-label', 'via']]) {
+    if (map.getLayer(id)) map.setLayoutProperty(id, 'text-field', stationLabelField(kind));
+  }
+}
+
 function overlayLayers() {
   return [
     {
@@ -716,8 +921,19 @@ function overlayLayers() {
       },
       paint: { 'icon-opacity': 1 },
     },
+    // Above the routes: stations are landmarks you navigate by, and the dots
+    // are small enough that they do not hide a line. Only added once the data
+    // is in — the layers reference the `stations` source.
+    ...(stationsData ? stationLayers() : []),
   ];
 }
+
+/**
+ * True once the overlay layers exist. updateStationLabels() needs it because
+ * applyI18n() runs before the first style has loaded, and map.getLayer() throws
+ * until then — the same race the updateTimePills() comment describes.
+ */
+let overlayReady = false;
 
 /**
  * Add (or re-add) the overlay. Every step is guarded individually rather than
@@ -728,11 +944,16 @@ function overlayLayers() {
 function addOverlay() {
   if (!routesData) return;
   addArrowImage(); // must exist before the symbol layer references it
+  addStationImage(); // likewise for the O-Train roundel
   if (!map.getSource('commuter')) {
     map.addSource('commuter', { type: 'geojson', data: routesData });
   }
+  if (stationsData && !map.getSource('stations')) {
+    map.addSource('stations', { type: 'geojson', data: stationsData });
+  }
   overlayLayers().forEach(l => { if (!map.getLayer(l.id)) map.addLayer(l); });
   applySelection();
+  overlayReady = true;
 }
 
 /** True when this route has sections that differ by direction of travel. */
@@ -997,7 +1218,10 @@ async function setMapStyle() {
 map.on('style.load', addOverlay);
 // Backstop for the same race: if the arrow is ever asked for before it is
 // registered, register it on demand rather than drawing nothing.
-map.on('styleimagemissing', (e) => { if (e.id === 'dir-arrow') addArrowImage(); });
+map.on('styleimagemissing', (e) => {
+  if (e.id === 'dir-arrow') addArrowImage();
+  if (e.id === 'otrain-o') addStationImage();
+});
 window._map = map; // debugging hook
 
 (async function boot() {
@@ -1010,6 +1234,10 @@ window._map = map; // debugging hook
     : [];
   // Optional: a route without pills simply shows none.
   pillsData = await fetch('time-pills.json').then(r => r.ok ? r.json() : []).catch(() => []);
+  // Stations are optional in the same way: without the file the map simply
+  // shows none, rather than failing to draw the routes.
+  stationsData = await fetch('stations.geojson').then(r => r.ok ? r.json() : null).catch(() => null);
+  otrainImage = await loadOtrainImage();
   renderRouteList();
   await setMapStyle();
   map.fitBounds(allBounds(), { padding: 60, duration: 0 });
