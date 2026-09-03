@@ -500,6 +500,57 @@ level rather than by deleting elements.
 that SVG as fallbacks. The touch icon is padded on a white background because
 iOS composites home-screen tiles on a solid colour and ignores transparency.
 
+### Link preview card
+
+`assets/og-card.png` is the image Teams, Slack, iMessage, LinkedIn and Facebook
+show when someone shares the map's URL. The Open Graph tags that point at it sit
+at the top of `index.html`, and the URLs in them are absolute — scrapers do not
+reliably resolve a relative `og:image`, so the Pages origin is spelled out and
+has to be changed if the site ever moves off `github.io`.
+
+Regenerate the card after changing the route set, the route palette or the
+default style:
+
+```bash
+npx --yes http-server -p 8123 -c-1 --silent .   # in one terminal (npm run serve)
+node tools/export-og-card.mjs                   # in another (npm run og-card)
+```
+
+The render needs both that static server — the harness fetches `routes.geojson`
+and `style-default.json` — and a network connection, since the Thunderforest
+tiles and glyph PBFs come from their API.
+
+`tools/export-og-card.mjs` drives `tools/og-card.html` through Playwright.
+Unlike the poster pipeline, both the script and its output are committed — the
+PNG is a published asset that `index.html` links to.
+
+Three things about it are deliberate:
+
+- **1200×630.** The 1.91:1 ratio every scraper expects. The harness is authored
+  at 600×315 — roughly the size a reader sees an unfurl at — and rendered at
+  `deviceScaleFactor: 2`. That gives a crisp card on a retina display and, more
+  usefully, lets MapLibre thin the basemap labels down to what a 600 px map can
+  hold instead of packing in the ~40 a 1200 px map would fit.
+- **Routes under the labels.** The live map draws routes last, since there you
+  can pan a name out from under a line. On a static card an overprinted
+  "Barrhaven" stays unreadable, and those names are what tell a reader which
+  corridor is which, so the card inserts the route layers below the first symbol
+  layer — the same thing the poster does.
+- **The basemap's own cycling layers are dropped.** They draw coloured lines
+  along the same corridors, which at card size read as extra commuter routes.
+  The hide list in `og-card.html` also drops terrain and POI detail nobody can
+  resolve at this size.
+
+The per-route casing colour is computed in `og-card.html` by a copy of
+`casingFor()` from `index.html`; the card is a separate render target with no
+access to the page's inline script. Keep the two in step if the palette changes,
+or pale routes like Nepean and Greenboro lose their contrast.
+
+Note that scrapers cache per URL, so a link already shared keeps showing its old
+preview (or none) until that cache expires. Sharing the URL with a query string
+appended forces a fresh scrape; LinkedIn and Facebook also have debugger tools
+that do it on demand.
+
 ### Photo bubbles (currently off)
 
 An optional feature places round photo markers along a selected route showing

@@ -5,6 +5,39 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bike Commute Routes To Downtown Ottawa</title>
 <meta name="description" content="Safe bike commute routes to downtown Ottawa. A Cycling Safety Awareness Program resource.">
+
+<!-- Link preview (Open Graph), for the card Teams, Slack, iMessage, LinkedIn
+     and Facebook draw when someone shares the URL.
+
+     Absolute URLs, not paths: scrapers do not reliably resolve a relative
+     og:image against the page, and several show nothing at all rather than
+     guess. So the Pages origin is spelled out, and it has to be updated if
+     this ever moves off github.io.
+
+     og:image is rendered by tools/export-og-card.mjs — the ten route corridors
+     over the site's own basemap, next to a bilingual title panel. Regenerate it
+     whenever the route set or the palette changes; the width and height below
+     are declared so a scraper can lay the card out before the PNG arrives, and
+     must match the file.
+
+     One limitation worth knowing: these tags are static, but the page is
+     bilingual behind a client-side toggle, so a scraper cannot be served the
+     French title. og:locale says which language the tags are in, and the card
+     image itself carries both — that is as far as a static host goes. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Cycling Safety Awareness Program">
+<meta property="og:url" content="https://envirocentre-ca.github.io/ottawa-bike-commuter-map/">
+<meta property="og:title" content="Bike Commute Routes To Downtown Ottawa">
+<meta property="og:description" content="Safe bike commute routes to downtown Ottawa. A Cycling Safety Awareness Program resource.">
+<meta property="og:image" content="https://envirocentre-ca.github.io/ottawa-bike-commuter-map/assets/og-card.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Map of ten protected bike commute routes converging on downtown Ottawa from the suburbs.">
+<meta property="og:locale" content="en_CA">
+<meta property="og:locale:alternate" content="fr_CA">
+<meta name="twitter:card" content="summary_large_image">
+
 <!-- City of Ottawa logo mark, cut from assets/ottawa-logo-white.svg. The SVG
      covers current browsers; the PNG is the fallback for older ones, and iOS
      uses the touch icon (which is padded on white, since iOS has no
@@ -769,9 +802,10 @@ function casingFor(color) {
  * roundel, `transitway` and `via` share the basemap's own dark station dot and
  * are told apart by an italic subtitle underneath.
  *
- * Nothing appears before z13, and no label before z14: at the city-wide zooms
- * this map opens at, 39 markers read as the subject rather than as orientation,
- * and the routes are the subject. VIA is held back one level further, to z14 —
+ * The roundels come in at z11 and their names at z13; the Transitway dots hold
+ * back to z13 and every subtitle to z14. At the city-wide zooms this map opens
+ * at, 39 markers read as the subject rather than as orientation, and the routes
+ * are the subject. VIA is held back furthest, to z14 —
  * its Fallowfield station sits 97 m from the Transitway station of the same
  * name, which is 3 px at z12 and 12 px at z14, so below that the two cannot
  * both be legible. Their labels are anchored in opposite directions for the
@@ -846,10 +880,10 @@ function stationLayers() {
       id: 'stations-otrain',
       type: 'symbol', source: 'stations',
       filter: ['==', ['get', 'kind'], 'otrain'],
-      minzoom: 13,
+      minzoom: 11,
       layout: {
         'icon-image': 'otrain-o',
-        'icon-size': ['interpolate', ['linear'], ['zoom'], 13, 0.6, 14, 0.72, 18, 0.9],
+        'icon-size': ['interpolate', ['linear'], ['zoom'], 11, 0.5, 13, 0.62, 14, 0.72, 18, 0.9],
         'icon-allow-overlap': true,
         'icon-ignore-placement': true,
       },
@@ -858,7 +892,7 @@ function stationLayers() {
       id: 'stations-otrain-label',
       type: 'symbol', source: 'stations',
       filter: ['==', ['get', 'kind'], 'otrain'],
-      minzoom: 14,
+      minzoom: 13,
       layout: {
         'text-field': ['get', 'name'],
         'text-font': ['NotoSans_Regular'],
