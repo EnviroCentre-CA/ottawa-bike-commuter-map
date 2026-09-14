@@ -72,8 +72,11 @@ export const CORRIDORS = [
       [-75.464442, 45.454202], // 
       [-75.464572, 45.454675], //
       [-75.464954, 45.454985], // 
-      [-75.465025, 45.478363], // Portobello Blvd, north end
-      [-75.477830, 45.489322], // Trim Rd, over Highway 174
+      [-75.465376, 45.478630], // trim just north of Portobello Blvd
+      [-75.473992, 45.484583], // trim just north of Watters road
+      [-75.474932, 45.485743], // trim just north of antigonish ave
+      [-75.477336, 45.489133], // Trim Rd roundabout
+      [-75.479324, 45.491383], // Trim Rd on MUP further north of the roundabout 
       [-75.481182, 45.498095], // Trim Rd, north end at the river
       [-75.482415, 45.497338], // two-way bike lane, south side of Jeanne-d'Arc Blvd N
       [-75.493933, 45.493537], // Ottawa River Pathway, heading west
@@ -131,6 +134,7 @@ export const CORRIDORS = [
       [-75.633516, 45.419068], // multi-use pathway (keeps it off the intersection to the south)
       [-75.634724, 45.419118], // bike crossing at the intersection just west
       [-75.66527, 45.41254], // Hurdman
+      [-75.686949, 45.423674], // laurier bike lane near ottawa u
       [-75.696955, 45.419474], // Downtown west bound bike lane
         ],
   },
@@ -339,6 +343,7 @@ export const CORRIDORS = [
           REJOIN,
           [-75.657432, 45.431567], // via
           [-75.670478, 45.430130], // via
+          [-75.686949, 45.423674], // laurier bike lane near ottawa u
           [-75.696955, 45.419474], // Downtown west bound bike lane
         ],
       },
