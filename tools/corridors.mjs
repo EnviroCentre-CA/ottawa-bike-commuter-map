@@ -151,7 +151,7 @@ export const CORRIDORS = [
       [-75.920091, 45.258599], //Village Square park near Stittsville main street
       [-75.848226, 45.317134], // Mup near robertson going north
       [-75.861645, 45.341033], // Mup near Wesley Clover Park
-      [-75.754068, 45.395383], // Scott St
+      [-75.754665, 45.395062], // Scott St
       BAYVIEW_JOIN,
       ...bayviewToDowntown(),
     ],
@@ -246,12 +246,15 @@ export const CORRIDORS = [
       [-75.624703, 45.316483], // Quinn road
       [-75.684639, 45.373423], // Brookfield MUP
       [-75.693516, 45.372390], // hogs back
+      [-75.695883, 45.371014], // hogs back u turn before tunnel
+      [-75.695375, 45.371132], // hogs back u turn before tunnel 2
       [-75.699552, 45.377657], // MUP near Vincent Massey
       [-75.695193, 45.381808], // Rideau River footbridge
       [-75.693244, 45.386106], // east of Carleton campus
       [-75.688308, 45.388219], // Brewers park
       [-75.691270, 45.393089], // Seneca st
       [-75.687396, 45.421497], // canal pathway near downtown
+      [-75.689719, 45.422542], // laurier
       [-75.696955, 45.419474], // Downtown west bound bike lane
     ],
   },
