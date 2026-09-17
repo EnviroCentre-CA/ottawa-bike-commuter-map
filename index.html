@@ -189,16 +189,17 @@
   /* Thickness key, repeated inside every route's detail so it sits with the
      route it describes. Heights are the three line-width values
      applySelection() draws (carfree 6, lane 3, road 2), so the samples keep
-     the map's proportions; round ends match its line-cap. Neutral ink rather
-     than the route's own colour: the paler routes (yellow, light blue) would
-     vanish at 2px on white, and no corridor is drawn in grey or black. */
+     the map's proportions; round ends match its line-cap. Colour and casing
+     ring are set inline per route by renderRouteList() — the casing is what
+     keeps the paler routes (yellow, light blue) visible at 2px on white, just
+     as it does on the map. */
   .width-key { margin-top: 10px; }
   .width-key h3 {
     font-size: 11px; font-weight: 700; text-transform: uppercase;
     letter-spacing: .06em; color: var(--muted); margin-bottom: 2px;
   }
   .width-key div { display: flex; align-items: center; gap: 10px; padding: 2px 0; }
-  .width-key .sample { flex: 0 0 22px; border-radius: 99px; background: var(--ink); }
+  .width-key .sample { flex: 0 0 22px; border-radius: 99px; }
   .sample.carfree { height: 6px; }
   .sample.lane { height: 3px; }
   .sample.road { height: 2px; }
@@ -1212,9 +1213,13 @@ function renderRouteList() {
       `<button type="button" class="how-times-cue" data-how-times>${t('howTimesLink')}</button>` +
       // Thickness key. Only the selected route varies its width, and only the
       // selected route's detail is shown, so the two coincide by construction.
+      // Each sample is drawn the way the map draws this route: its colour with
+      // its casing 1.5px proud on either side (see safetyWidth/safetyCasing).
       `<div class="width-key"><h3>${t('widthHeading')}</h3>` +
       [['carfree', 'widthCarfree'], ['lane', 'widthLane'], ['road', 'widthRoad']]
-        .map(([cls, key]) => `<div><span class="sample ${cls}"></span><span>${t(key)}</span></div>`)
+        .map(([cls, key]) =>
+          `<div><span class="sample ${cls}" style="background:${p.color};box-shadow:0 0 0 1.5px ${p.casing}"></span>` +
+          `<span>${t(key)}</span></div>`)
         .join('') +
       `</div>`;
 
