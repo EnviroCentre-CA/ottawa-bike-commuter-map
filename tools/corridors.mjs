@@ -167,6 +167,13 @@ export const CORRIDORS = [
       [-75.923311, 45.323549], // top of Whalen Park
       [-75.906533, 45.322746], // MUP into beaverbrook
       [-75.904470, 45.324698], // Mup into Leacock dr
+      [-75.896932, 45.324151], // Sidewalk along The Parkway 0
+      [-75.895712, 45.324557], // Sidewalk along The Parkway 1
+      [-75.895343, 45.324797], // Sidewalk along The Parkway 2
+      [-75.894788, 45.325012], // Sidewalk along The Parkway 3
+      [-75.894300, 45.325228], // Sidewalk along The Parkway 4
+      [-75.893825, 45.325478], // Sidewalk along The Parkway 5
+      [-75.893242, 45.325578], // Sidewalk along The Parkway 6
       [-75.891148, 45.325284], // Armstrong park
       [-75.885796, 45.338006], // Watts creek pathway
       [-75.80812, 45.35641], // north east of Andrew Haydon park
@@ -344,7 +351,7 @@ export const CORRIDORS = [
       {
         points: [
           REJOIN,
-          [-75.657432, 45.431567], // via
+          [-75.657586, 45.431584], // via
           [-75.670478, 45.430130], // via
           [-75.686949, 45.423674], // laurier bike lane near ottawa u
           [-75.696955, 45.419474], // Downtown west bound bike lane
