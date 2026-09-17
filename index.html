@@ -186,6 +186,22 @@
   .route-detail .how-times-cue {
     margin-top: 8px; font-size: 11.5px; font-weight: 600; color: var(--brand);
   }
+  /* Thickness key, repeated inside every route's detail so it sits with the
+     route it describes. Heights are the three line-width values
+     applySelection() draws (carfree 6, lane 3, road 2), so the samples keep
+     the map's proportions; round ends match its line-cap. Neutral ink rather
+     than the route's own colour: the paler routes (yellow, light blue) would
+     vanish at 2px on white, and no corridor is drawn in grey or black. */
+  .width-key { margin-top: 10px; }
+  .width-key h3 {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--muted); margin-bottom: 2px;
+  }
+  .width-key div { display: flex; align-items: center; gap: 10px; padding: 2px 0; }
+  .width-key .sample { flex: 0 0 22px; border-radius: 99px; background: var(--ink); }
+  .sample.carfree { height: 6px; }
+  .sample.lane { height: 3px; }
+  .sample.road { height: 2px; }
   #showall {
     margin-top: 8px; width: 100%;
     font: inherit; font-size: 13px;
@@ -196,8 +212,8 @@
   }
   #showall:hover { border-color: var(--brand); color: var(--brand); }
   #showall.visible { display: block; }
-  #safety-note, #oneway-note { display: none; font-size: 12px; color: var(--muted); margin-top: 8px; }
-  #safety-note.visible, #oneway-note.visible { display: block; }
+  #oneway-note { display: none; font-size: 12px; color: var(--muted); margin-top: 8px; }
+  #oneway-note.visible { display: block; }
   .legend { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border); }
   .legend div { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--muted); padding: 3px 0; }
   .legend .swatch { flex: 0 0 22px; height: 0; }
@@ -363,7 +379,6 @@
          first route button, which carries its own focus ring. -->
     <div id="route-list" tabindex="-1"></div>
     <button id="showall" data-i18n="showAll"></button>
-    <p id="safety-note" data-i18n-html="safetyNote"></p>
     <p id="oneway-note" data-i18n-html="onewayNote"></p>
     <div class="legend">
       <h2 data-i18n="legendHeading"></h2>
@@ -403,7 +418,10 @@ const I18N = {
     legendLane: 'On-street bike lane',
     legendOneway: 'One-way section — arrows show which way to ride',
     showAll: 'Show all routes',
-    safetyNote: 'Line thickness shows how protected each section is: <strong>thick = fully protected, thin = less protected and shared with car traffic</strong>.',
+    widthHeading: 'Line thickness',
+    widthCarfree: 'Fully protected',
+    widthLane: 'On-street bike lane',
+    widthRoad: 'Shared with car traffic',
     onewayNote: 'This route splits in two for part of the way. Follow the arrows: one line is the ride <strong>to work</strong>, the other the ride <strong>home</strong>.',
     carFree: 'protected',
     sectionCarfree: 'Car-free section',
@@ -457,7 +475,10 @@ const I18N = {
     legendLane: 'Bande cyclable sur rue',
     legendOneway: 'Section à sens unique — les flèches indiquent le sens',
     showAll: 'Afficher tous les trajets',
-    safetyNote: 'L’épaisseur du trait indique le niveau de protection de chaque section : <strong>épais = entièrement protégé, mince = moins protégé et partagé avec la circulation automobile</strong>.',
+    widthHeading: 'Épaisseur du trait',
+    widthCarfree: 'Protégé (sans voitures)',
+    widthLane: 'Bande cyclable sur rue',
+    widthRoad: 'Partagé avec les voitures',
     onewayNote: 'Ce trajet se divise en deux sur une partie du parcours. Suivez les flèches : un tracé correspond à l’<strong>aller au travail</strong>, l’autre au <strong>retour à la maison</strong>.',
     carFree: 'protégé',
     sectionCarfree: 'Section sans voitures',
@@ -1016,7 +1037,8 @@ function arrowFilter() {
 
 function applySelection() {
   if (!map.getLayer('commuter-line')) return;
-  // Selected route: thickness encodes protection from car traffic.
+  // Selected route: thickness encodes protection from car traffic. The
+  // .width-key in each route's detail draws its samples at these same widths.
   const safetyWidth = ['match', ['get', 'safety'], 'carfree', 6, 'lane', 3, 2];
   const safetyCasing = ['match', ['get', 'safety'], 'carfree', 9, 'lane', 6, 5];
   const dim = selectedId
@@ -1049,7 +1071,6 @@ function applySelection() {
     if (detail) detail.hidden = !on;
   });
   document.getElementById('showall').classList.toggle('visible', !!selectedId);
-  document.getElementById('safety-note').classList.toggle('visible', !!selectedId);
   document.getElementById('oneway-note').classList.toggle('visible', hasDirections(selectedId));
   updatePhotoBubbles();
   updateTimePills();
@@ -1188,7 +1209,14 @@ function renderRouteList() {
       (facts.length
         ? `<ul class="route-facts">${facts.map(f => `<li>${f}</li>`).join('')}</ul>`
         : '') +
-      `<button type="button" class="how-times-cue" data-how-times>${t('howTimesLink')}</button>`;
+      `<button type="button" class="how-times-cue" data-how-times>${t('howTimesLink')}</button>` +
+      // Thickness key. Only the selected route varies its width, and only the
+      // selected route's detail is shown, so the two coincide by construction.
+      `<div class="width-key"><h3>${t('widthHeading')}</h3>` +
+      [['carfree', 'widthCarfree'], ['lane', 'widthLane'], ['road', 'widthRoad']]
+        .map(([cls, key]) => `<div><span class="sample ${cls}"></span><span>${t(key)}</span></div>`)
+        .join('') +
+      `</div>`;
 
     item.append(btn, detail);
     list.appendChild(item);
