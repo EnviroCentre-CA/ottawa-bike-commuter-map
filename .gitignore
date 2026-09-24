@@ -11,8 +11,11 @@ poster/
 posters/
 style-poster.json
 tools/render-poster.mjs
+tools/render-poster-portrait.mjs
 tools/export-map-image.mjs
 tools/export-legend-svg.mjs
+tools/export-legend-png.mjs
+tools/render-trifold.mjs
 
 # Route sheet directions — a print deliverable like the posters. NOTE that
 # tools/corridors.mjs is NOT ignored: fetch-routes.mjs imports it, so the
